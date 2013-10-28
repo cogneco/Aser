@@ -24,41 +24,47 @@ using Kean.Extension;
 using IO = Kean.IO;
 namespace Aser.Http
 {
-    public class Response
-    {
-        public string ContentType { get; set; }
-        Waser.Http.IResponse backend;
-        IO.ICharacterWriter writer;
-        public IO.ICharacterWriter Writer
-        {
-            get
-            { 
-                if (this.writer.IsNull())
-                    this.writer = IO.CharacterWriter.Open(IO.CharacterDevice.Open(IO.ByteDeviceCombiner.Open(this.Device)));
-                return this.writer;
-            }
-        }
-        IO.IByteOutDevice device;
-        public IO.IByteOutDevice Device
-        {
-            get
-            {
-                if (this.device.IsNull())
-                    this.device = IO.ByteDevice.Wrap(this.backend.Stream); 
-                return this.device; 
-            }
-        }
-        public Status Status { get; set; }
-        internal Response(Waser.Http.IResponse backend)
-        {
-            this.backend = backend;
-        }
-        public bool End()
-        {
-            this.backend.StatusCode = this.Status;
-            this.backend.End();
-            return true;
-        }
-    }
+	public class Response
+	{
+		Waser.Http.IResponse backend;
+		public string ContentType { get; set; }
+		public Header.Links Link { get; private set; }
+		IO.ICharacterWriter writer;
+		public IO.ICharacterWriter Writer
+		{
+			get
+			{ 
+				if (this.writer.IsNull())
+					this.writer = IO.CharacterWriter.Open(IO.CharacterDevice.Open(IO.ByteDeviceCombiner.Open(this.Device)));
+				return this.writer;
+			}
+		}
+		IO.IByteOutDevice device;
+		public IO.IByteOutDevice Device
+		{
+			get
+			{
+				if (this.device.IsNull())
+				{
+					this.backend.SetHeader("Content-Type", this.ContentType);
+					this.backend.SetHeader("Link", (string)this.Link);
+					this.device = IO.ByteDevice.Wrap(this.backend.Stream); 
+				}
+				return this.device; 
+			}
+		}
+		public Status Status { get; set; }
+		internal Response(Waser.Http.IResponse backend)
+		{
+			this.backend = backend;
+			this.Link = new Header.Links();
+		}
+		public bool End()
+		{
+			this.backend.StatusCode = this.Status;
+			this.backend.End();
+			return true;
+		}
+	}
 }
 
