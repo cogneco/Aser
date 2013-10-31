@@ -24,54 +24,51 @@ using Kean.Extension;
 using Uri = Kean.Uri;
 namespace Aser.Http
 {
-    public class Request
-    {
-        Waser.Http.IRequest backend;
-        Method? method;
-        public Method Method
-        {
-            get
-            { 
-                if (!this.method.HasValue)
-                    switch (this.backend.Method)
-                    {
-                        default:
-                            this.method = Method.Other;
-                            break;
-                        case Waser.Http.Method.Get:
-                            this.method = Method.Get;
-                            break;
-                        case Waser.Http.Method.Put:
-                            this.method = Method.Put;
-                            break;
-                        case Waser.Http.Method.Post:
-                            this.method = Method.Post;
-                            break;
-                        case Waser.Http.Method.Delete:
-                            this.method = Method.Delete;
-                            break;
-                    }
-                return this.method.Value;
-            }
-        }
-        Uri.Locator resource;
-        public Uri.Locator Resource
-        {
-            get
-            {
-                if (this.resource.IsNull())
-                {
-                    this.resource = new Uri.Locator("http", this.backend.Headers["Host"], this.backend.Path);
-                    foreach (string key in this.backend.QueryData.Keys)
-                        this.resource.Query[key] = this.backend.QueryData.Get(key);
-                }
-                return this.resource;
-            } 
-        }
-        internal Request(Waser.Http.IRequest backend)
-        {
-            this.backend = backend;
-        }
-    }
+	public abstract class Request
+	{
+		protected Waser.Http.IRequest Backend { get; private set; }
+		public abstract Method Method { get; }
+		Uri.Locator resource;
+		public Uri.Locator Resource
+		{
+			get
+			{
+				if (this.resource.IsNull())
+				{
+					this.resource = new Uri.Locator("http", this.Backend.Headers["Host"], this.Backend.Path);
+					foreach (string key in this.Backend.QueryData.Keys)
+						this.resource.Query[key] = this.Backend.QueryData.Get(key);
+				}
+				return this.resource;
+			} 
+		}
+		protected Request(Waser.Http.IRequest backend)
+		{
+			this.Backend = backend;
+		}
+		internal static Request Create(Waser.Http.IRequest backend)
+		{
+			Request result;
+			switch (backend.Method)
+			{
+				default:
+					result = null;
+					break;
+				case Waser.Http.Method.Get:
+					result = new Get(backend);
+					break;
+				case Waser.Http.Method.Put:
+					result = null;
+					break;
+				case Waser.Http.Method.Post:
+					result = new Post(backend);
+					break;
+				case Waser.Http.Method.Delete:
+					result = null;
+					break;
+			}
+			return result;
+		}
+	}
 }
 

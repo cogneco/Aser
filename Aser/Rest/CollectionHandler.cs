@@ -43,7 +43,13 @@ namespace Aser.Rest
 		{
 			this.defaultPageSize = defaultPageSize;
 		}
-		protected abstract Generic.IEnumerable<ResourceHandler<T>> Get(int limit, int offset);
+
+		#region Get
+
+		protected virtual Generic.IEnumerable<ResourceHandler<T>> Get(int limit, int offset)
+		{
+			return null;
+		}
 		protected override Serialize.Data.Node Get(Serialize.Storage storage, Aser.Http.Request request, Aser.Http.Response response)
 		{
 			int pageSize = request.Resource.Query.Get("pageSize", this.defaultPageSize);
@@ -65,8 +71,26 @@ namespace Aser.Rest
 		}
 		protected virtual Serialize.Data.Node Get(Serialize.Storage storage, int limit, int offset)
 		{
-			return new Serialize.Data.Collection(this.Get(limit, offset).Map(item => item.Get(storage)));
+			Generic.IEnumerable<ResourceHandler<T>> result = this.Get(limit, offset);
+			return result.NotNull() ? new Serialize.Data.Collection(result.Map(item => item.Get(storage))) : null;
 		}
+
+		#endregion
+
+		#region Post
+
+		protected virtual ResourceHandler<T> Post(T item)
+		{
+			return null;
+		}
+		protected override Serialize.Data.Node Post(Kean.IO.IByteInDevice device, Serialize.Storage storage, Aser.Http.Request request, Aser.Http.Response response)
+		{
+			ResourceHandler<T> result = this.Post(storage.Load<T>(device));
+			return result.NotNull() ? result.Get(storage) : null;
+		}
+
+		#endregion
+
 	}
 }
 

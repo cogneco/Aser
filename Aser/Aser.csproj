@@ -45,6 +45,8 @@
     <Compile Include="Http\Header\Link.cs" />
     <Compile Include="Http\Header\LinkRelation.cs" />
     <Compile Include="Http\Header\Links.cs" />
+    <Compile Include="Http\Get.cs" />
+    <Compile Include="Http\Post.cs" />
   </ItemGroup>
   <Import Project="$(MSBuildBinPath)\Microsoft.CSharp.targets" />
   <ProjectExtensions>

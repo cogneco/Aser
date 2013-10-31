@@ -24,41 +24,47 @@ using Kean.Extension;
 using Uri = Kean.Uri;
 namespace Aser.Http
 {
-    public class Server
-    {
-        class Application :
+	public class Server
+	{
+		class Application :
         Waser.Application
-        {
-            public Application(Action<Request, Response> process)
-            {
-                this.Route(".*", Waser.Routing.MatchType.Regex, context => process(new Request(context.Request), new Response(context.Response)));
-            }
-        }
-        Action<Request, Response> process;
-        Server(Action<Request, Response> process)
-        {
-            this.process = process;
-        }
-        public bool Listen(Uri.Endpoint endpoint)
-        {
-            bool result = true;
-            Waser.IO.IPAddress address;
-            string host = endpoint.Host;
-            if (host.IsEmpty())
-                address = Waser.IO.IPAddress.Any;
-            else
-                result = Waser.IO.IPAddress.TryParse(host, out address);
-            if (result)
-            {
-                Waser.ApplicationHost.ListenAt(new Waser.IO.IPEndPoint(address, (int?)endpoint.Port ?? 8080));
-                Waser.ApplicationHost.Start(new Application(this.process));
-            }
-            return result;
-        }
-        public static Server Create(Action<Request, Response> process)
-        {
-            return new Server(process);
-        }
-    }
+		{
+			public Application(Action<Request, Response> process)
+			{
+				Waser.Routing.Action handle = context =>
+				{
+					Request request = Request.Create(context.Request);
+					process(request, new Response(context.Response));
+				};
+				this.Route(".*", Waser.Routing.MatchType.Regex, handle);
+				this.Post(".*", Waser.Routing.MatchType.Regex, handle);
+			}
+		}
+		Action<Request, Response> process;
+		Server(Action<Request, Response> process)
+		{
+			this.process = process;
+		}
+		public bool Listen(Uri.Endpoint endpoint)
+		{
+			bool result = true;
+			Waser.IO.IPAddress address;
+			string host = endpoint.Host;
+			if (host.IsEmpty())
+				address = Waser.IO.IPAddress.Any;
+			else
+				result = Waser.IO.IPAddress.TryParse(host, out address);
+			if (result)
+			{
+				Waser.ApplicationHost.ListenAt(new Waser.IO.IPEndPoint(address, (int?)endpoint.Port ?? 8080));
+				Waser.ApplicationHost.Start(new Application(this.process));
+			}
+			return result;
+		}
+		public static Server Create(Action<Request, Response> process)
+		{
+			return new Server(process);
+		}
+	}
 }
 

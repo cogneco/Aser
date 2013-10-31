@@ -25,6 +25,7 @@ using Serialize = Kean.Serialize;
 using Json = Kean.Json;
 using Kean;
 using Kean.Extension;
+using IO = Kean.IO;
 namespace Aser.Rest
 {
 	public abstract class ResourceHandler
@@ -38,24 +39,6 @@ namespace Aser.Rest
 		{
 			if (path.IsNull() || path.Head.IsEmpty())
 				this.Process(request, response);
-			else
-				switch (request.Method)
-				{
-					case Http.Method.Get:
-						this.Get(path, request, response);
-						break;
-					case Http.Method.Put:
-						this.Put(path, request, response);
-						break;
-					case Http.Method.Post:
-						this.Post(path, request, response);
-						break;
-					case Http.Method.Delete:
-						this.Delete(path, request, response);
-						break;
-					default:
-						break;
-				}
 		}
 		protected virtual void Process(Http.Request request, Http.Response response)
 		{
@@ -65,6 +48,7 @@ namespace Aser.Rest
 			contentType = "application/json";
 			response.ContentType = contentType;
 			Serialize.Data.Node responseBody;
+			response.Status = Http.Status.OK;
 			switch (request.Method)
 			{
 				case Http.Method.Get:
@@ -74,7 +58,7 @@ namespace Aser.Rest
 					responseBody = this.Put(storage, request, response);
 					break;
 				case Http.Method.Post:
-					responseBody = this.Post(storage, request, response);
+					responseBody = this.Post((request as Http.Post).Device, storage, request, response);
 					break;
 				case Http.Method.Delete:
 					responseBody = this.Delete(storage, request, response);
@@ -83,16 +67,15 @@ namespace Aser.Rest
 					break;
 			}
 			if (responseBody.NotNull())
-			{
-				response.Status = Http.Status.OK;
 				storage.Store(responseBody, response.Device);
-			}
 			else
 				response.Status = Http.Status.MethodNotAllowed;
 			response.End();
 		}
 
 		#region Get, Put, Post, Delete of this resource
+
+		#region Get
 
 		protected virtual Serialize.Data.Node Get(Serialize.Storage storage, Http.Request request, Http.Response response)
 		{
@@ -102,6 +85,11 @@ namespace Aser.Rest
 		{
 			return null;
 		}
+
+		#endregion
+
+		#region Put
+
 		protected virtual Serialize.Data.Node Put(Serialize.Storage storage, Http.Request request, Http.Response response)
 		{
 			return this.Put(storage);
@@ -110,14 +98,28 @@ namespace Aser.Rest
 		{
 			return null;
 		}
-		protected virtual Serialize.Data.Node Post(Serialize.Storage storage, Http.Request request, Http.Response response)
+
+		#endregion
+
+		#region Post
+
+		protected virtual Serialize.Data.Node Post(IO.IByteInDevice device, Serialize.Storage storage, Http.Request request, Http.Response response)
 		{
-			return this.Post(storage);
+			return this.Post(storage.Load(device), storage, request, response);
 		}
-		protected virtual Serialize.Data.Node Post(Serialize.Storage storage)
+		protected virtual Serialize.Data.Node Post(Serialize.Data.Node body, Serialize.Storage storage, Http.Request request, Http.Response response)
+		{
+			return this.Post(body, storage);
+		}
+		protected virtual Serialize.Data.Node Post(Serialize.Data.Node body, Serialize.Storage storage)
 		{
 			return null;
 		}
+
+		#endregion
+
+		#region Delete
+
 		protected virtual Serialize.Data.Node Delete(Serialize.Storage storage, Http.Request request, Http.Response response)
 		{
 			return this.Delete(storage);
@@ -129,18 +131,8 @@ namespace Aser.Rest
 
 		#endregion
 
-		protected virtual void Get(Path path, Http.Request request, Http.Response response)
-		{
-		}
-		protected virtual void Put(Path path, Http.Request request, Http.Response response)
-		{
-		}
-		protected virtual void Post(Path path, Http.Request request, Http.Response response)
-		{
-		}
-		protected virtual void Delete(Path path, Http.Request request, Http.Response response)
-		{
-		}
+		#endregion
+
 	}
 	public abstract class ResourceHandler<T> :
     ResourceHandler
