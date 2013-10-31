@@ -30,17 +30,20 @@ namespace Aser.Http
 	public class Post :
 	Request
 	{
-		IO.BufferByteInDevice device = IO.BufferByteInDevice.Create();
-		public IO.IByteInDevice Device { get { return this.device; } }
 		public override Method Method { get { return Method.Post; } }
-		internal Post(Waser.Http.IRequest backend) :
+		IO.IByteInDevice device;
+		public IO.IByteInDevice Device
+		{
+			get
+			{
+				if (this.device.IsNull())
+					this.device = IO.ByteDevice.Wrap(this.Backend.Body); 
+				return this.device; 
+			}
+		}
+		internal Post(Owin.Types.OwinRequest backend) :
 			base(backend)
 		{
-			backend.ParserSettings.OnBody = (Waser.Http.Parser parser, Waser.IO.ByteBuffer data, int offset, int count) =>
-			{
-				this.device.Append(new Collection.Slice<byte>(data.Bytes, offset, count));
-				return 0;
-			};
 		}
 	}
 }

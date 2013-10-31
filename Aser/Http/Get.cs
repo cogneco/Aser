@@ -22,13 +22,14 @@ using System;
 using Kean;
 using Kean.Extension;
 using Uri = Kean.Uri;
+using IO = Kean.IO;
 namespace Aser.Http
 {
 	public class Get :
 	Request
 	{
 		public override Method Method { get { return Method.Get; } }
-		internal Get(Waser.Http.IRequest backend) :
+		internal Get(Owin.Types.OwinRequest backend) :
 			base(backend)
 		{
 		}

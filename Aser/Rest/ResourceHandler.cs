@@ -35,24 +35,25 @@ namespace Aser.Rest
 		{
 			this.Locator = locator;
 		}
-		public virtual void Process(Path path, Http.Request request, Http.Response response)
+		public virtual bool Process(Path path, Http.Request request, Http.Response response)
 		{
-			if (path.IsNull() || path.Head.IsEmpty())
+			bool result;
+			if (result = path.IsNull() || path.Head.IsEmpty())
 				this.Process(request, response);
+			return result;
 		}
 		protected virtual void Process(Http.Request request, Http.Response response)
 		{
 			Serialize.Storage storage;
-			string contentType;
 			storage = new Json.Serialize.Storage();
-			contentType = "application/json";
-			response.ContentType = contentType;
+			response.ContentType = "application/json";
 			Serialize.Data.Node responseBody;
-			response.Status = Http.Status.OK;
 			switch (request.Method)
 			{
 				case Http.Method.Get:
+					response.Writer.Write("#");
 					responseBody = this.Get(storage, request, response);
+					response.Writer.Write("@");
 					break;
 				case Http.Method.Put:
 					responseBody = this.Put(storage, request, response);

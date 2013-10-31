@@ -26,8 +26,8 @@ namespace Aser.Http
 {
 	public class Response
 	{
-		Waser.Http.IResponse backend;
-		public string ContentType { get; set; }
+		Owin.Types.OwinResponse backend;
+		public string ContentType { get { return this.backend.ContentType; } set { this.backend.ContentType = value; } }
 		public Header.Links Link { get; private set; }
 		IO.ICharacterWriter writer;
 		public IO.ICharacterWriter Writer
@@ -46,15 +46,14 @@ namespace Aser.Http
 			{
 				if (this.device.IsNull())
 				{
-					this.backend.SetHeader("Content-Type", this.ContentType);
 					this.backend.SetHeader("Link", (string)this.Link);
-					this.device = IO.ByteDevice.Wrap(this.backend.Stream); 
+					this.device = IO.ByteDevice.Wrap(this.backend.Body); 
 				}
 				return this.device; 
 			}
 		}
 		public Status Status { get; set; }
-		internal Response(Waser.Http.IResponse backend)
+		internal Response(Owin.Types.OwinResponse backend)
 		{
 			this.backend = backend;
 			this.Link = new Header.Links();
@@ -62,7 +61,6 @@ namespace Aser.Http
 		public bool End()
 		{
 			this.backend.StatusCode = this.Status;
-			this.backend.End();
 			return true;
 		}
 	}

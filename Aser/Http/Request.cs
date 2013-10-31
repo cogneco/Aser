@@ -26,7 +26,7 @@ namespace Aser.Http
 {
 	public abstract class Request
 	{
-		protected Waser.Http.IRequest Backend { get; private set; }
+		protected Owin.Types.OwinRequest Backend { get; private set; }
 		public abstract Method Method { get; }
 		Uri.Locator resource;
 		public Uri.Locator Resource
@@ -34,19 +34,15 @@ namespace Aser.Http
 			get
 			{
 				if (this.resource.IsNull())
-				{
-					this.resource = new Uri.Locator("http", this.Backend.Headers["Host"], this.Backend.Path);
-					foreach (string key in this.Backend.QueryData.Keys)
-						this.resource.Query[key] = this.Backend.QueryData.Get(key);
-				}
+					this.resource = this.Backend.Uri.ToString();
 				return this.resource;
 			} 
 		}
-		protected Request(Waser.Http.IRequest backend)
+		protected Request(Owin.Types.OwinRequest backend)
 		{
 			this.Backend = backend;
 		}
-		internal static Request Create(Waser.Http.IRequest backend)
+		internal static Request Create(Owin.Types.OwinRequest backend)
 		{
 			Request result;
 			switch (backend.Method)
@@ -54,16 +50,16 @@ namespace Aser.Http
 				default:
 					result = null;
 					break;
-				case Waser.Http.Method.Get:
+				case "GET":
 					result = new Get(backend);
 					break;
-				case Waser.Http.Method.Put:
+				case "PUT":
 					result = null;
 					break;
-				case Waser.Http.Method.Post:
+				case "POST":
 					result = new Post(backend);
 					break;
-				case Waser.Http.Method.Delete:
+				case "DELETE":
 					result = null;
 					break;
 			}

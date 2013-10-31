@@ -22,45 +22,67 @@ using System;
 using Kean;
 using Kean.Extension;
 using Uri = Kean.Uri;
+using Owin;
+using Tasks = System.Threading.Tasks.Task;
 namespace Aser.Http
 {
-	public class Server
+	public class Server :
+	IDisposable
 	{
-		class Application :
-        Waser.Application
-		{
-			public Application(Action<Request, Response> process)
-			{
-				Waser.Routing.Action handle = context =>
-				{
-					Request request = Request.Create(context.Request);
-					process(request, new Response(context.Response));
-				};
-				this.Route(".*", Waser.Routing.MatchType.Regex, handle);
-				this.Post(".*", Waser.Routing.MatchType.Regex, handle);
-			}
-		}
+		IDisposable backend;
 		Action<Request, Response> process;
 		Server(Action<Request, Response> process)
 		{
 			this.process = process;
 		}
-		public bool Listen(Uri.Endpoint endpoint)
+		~Server ()
 		{
-			bool result = true;
-			Waser.IO.IPAddress address;
-			string host = endpoint.Host;
-			if (host.IsEmpty())
-				address = Waser.IO.IPAddress.Any;
-			else
-				result = Waser.IO.IPAddress.TryParse(host, out address);
-			if (result)
+			this.Close();
+		}
+		public Server Listen(Uri.Endpoint endpoint)
+		{
+			var options = new Microsoft.Owin.Hosting.StartOptions
 			{
-				Waser.ApplicationHost.ListenAt(new Waser.IO.IPEndPoint(address, (int?)endpoint.Port ?? 8080));
-				Waser.ApplicationHost.Start(new Application(this.process));
+				//ServerFactory = "Microsoft.Owin.Host.HttpListener",
+				ServerFactory = "Nowin",
+				Port = (int?)endpoint.Port ?? 8080,
+			};
+			this.backend = Microsoft.Owin.Hosting.WebApp.Start(options, applicationBuilder => 
+				applicationBuilder.UseHandler((request, response) =>
+			{
+				this.process(Request.Create(request), new Response(response));
+			}));
+			return this;
+		}
+		public bool Run(Uri.Endpoint endpoint)
+		{
+			bool result;
+			this.Listen(endpoint);
+			while (true) // TODO: find a good way to shut the server down (sending signal?)
+				System.Threading.Thread.Sleep(60000);
+			result &= this.Close();
+			return result;
+		}
+		public bool Close()
+		{
+			bool result;
+			if (result = this.backend.NotNull())
+			{
+				this.backend.Dispose();
+				this.backend = null;
 			}
 			return result;
 		}
+
+		#region IDisposable implementation
+
+		void IDisposable.Dispose()
+		{
+			this.Close();
+		}
+
+		#endregion
+
 		public static Server Create(Action<Request, Response> process)
 		{
 			return new Server(process);
