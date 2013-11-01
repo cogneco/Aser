@@ -19,28 +19,25 @@
 //  You should have received a copy of the GNU Lesser General Public License
 //  along with this program.  If not, see <http://www.gnu.org/licenses/>.
 using System;
-using DB = Kean.DB;
-using Serialize = Kean.Serialize;
-namespace Aser.Rest
+using Kean;
+using Kean.Extension;
+using Uri = Kean.Uri;
+namespace Aser.Test.Front
 {
-	public abstract class Item<T> :
-    DB.Item
-        where T : Item<T>, new()
+	public class Item :
+	Rest.ResourceHandler<Back.Item>
 	{
-		protected Item()
+		Item(Uri.Locator locator, Back.Item backend) :
+			base(locator, backend)
 		{
 		}
-		protected Item(long key) :
-			base(key)
+		public static Item Create(Uri.Locator parentLocator, int key)
 		{
+			return Item.Create(parentLocator, new Back.Item(key));
 		}
-		public virtual Serialize.Data.Node Serialize(Serialize.IStorage storage)
+		public static Item Create(Uri.Locator parentLocator, Back.Item backend)
 		{
-			return storage.Serialize(typeof(T), this, "stream:///");
-		}
-		public virtual bool Deserialize(Serialize.IStorage storage, Serialize.Data.Node node)
-		{
-			return storage.DeserializeContent(node, this);
+			return new Item(parentLocator + backend.Key.AsString(), backend);
 		}
 	}
 }

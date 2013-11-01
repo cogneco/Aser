@@ -44,6 +44,20 @@ namespace Aser.Rest
 			this.defaultPageSize = defaultPageSize;
 		}
 
+		#region Route
+
+		protected virtual ResourceHandler<T> Route(string identifier)
+		{
+			return null;
+		}
+		protected override Tuple<ResourceHandler, Path> Route(Path path)
+		{
+			ResourceHandler result = this.Route(path.Head);
+			return result.NotNull() ? Tuple.Create(result, path.Tail) : base.Route(path);
+		}
+
+		#endregion
+
 		#region Get
 
 		protected virtual Generic.IEnumerable<ResourceHandler<T>> Get(int limit, int offset)

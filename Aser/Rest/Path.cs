@@ -24,63 +24,62 @@ using Kean;
 using Kean.Extension;
 namespace Aser.Rest
 {
-    public class Path :
+	public class Path :
     IEquatable<Path>
-    {
-        public string Head { get; private set; }
-        public Path Tail { get; private set; }
-        Path()
-        {
-        }
+	{
+		public string Head { get; private set; }
+		public Path Tail { get; private set; }
+		Path()
+		{
+		}
 
-        #region Object Overrides
+		#region Object Overrides
 
-        public override int GetHashCode()
-        {
-            return this.Head.Hash() ^ this.Tail.Hash();
-        }
-        public override bool Equals(object other)
-        {
-            return other is Path && (this as IEquatable<Path>).Equals(other as Path);
-        }
-        public override string ToString()
-        {
-            return this.Tail.NotNull() ? this.Head + "/" + this.Tail.ToString() : this.Head;
-        }
+		public override int GetHashCode()
+		{
+			return this.Head.Hash() ^ this.Tail.Hash();
+		}
+		public override bool Equals(object other)
+		{
+			return other is Path && (this as IEquatable<Path>).Equals(other as Path);
+		}
+		public override string ToString()
+		{
+			return this.Tail.NotNull() ? this.Head + "/" + this.Tail.ToString() : this.Head;
+		}
 
-        #endregion
+		#endregion
 
-        #region IEquatable implementation
+		#region IEquatable implementation
 
-        bool IEquatable<Path>.Equals(Path other)
-        {
-            return other.NotNull() && this.Head == other.Head && this.Tail.SameOrEquals(other.Tail);
-        }
+		bool IEquatable<Path>.Equals(Path other)
+		{
+			return other.NotNull() && this.Head == other.Head && this.Tail.SameOrEquals(other.Tail);
+		}
 
-        #endregion
+		#endregion
 
-        #region Comparison Operators
+		#region Comparison Operators
 
-        public static bool operator ==(Path left, Path right)
-        {
-            return left.SameOrEquals(right);
-        }
-        public static bool operator !=(Path left, Path right)
-        {
-            return !left.SameOrEquals(right);
-        }
+		public static bool operator ==(Path left, Path right)
+		{
+			return left.SameOrEquals(right);
+		}
+		public static bool operator !=(Path left, Path right)
+		{
+			return !left.SameOrEquals(right);
+		}
 
-        #endregion
+		#endregion
 
-        public static implicit operator Path(Uri.Path path)
-        {
-            return Path.Build(path.Last, null);
-        }
-        static Path Build(Uri.PathLink current, Path tail)
-        {
-            Console.WriteLine("# " + (current.NotNull() ? current.Head : "!"));
-            return current.NotNull() ? Path.Build(current.Tail, new Path() { Head = current.Head, Tail = tail }) : tail;
-        }
-    }
+		public static implicit operator Path(Uri.Path path)
+		{
+			return Path.Build(path.Last, null);
+		}
+		static Path Build(Uri.PathLink current, Path tail)
+		{
+			return current.NotNull() ? Path.Build(current.Tail, new Path() { Head = current.Head, Tail = tail }) : tail;
+		}
+	}
 }
 

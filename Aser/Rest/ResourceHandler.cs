@@ -35,12 +35,19 @@ namespace Aser.Rest
 		{
 			this.Locator = locator;
 		}
-		public virtual bool Process(Path path, Http.Request request, Http.Response response)
+		protected virtual Tuple<Rest.ResourceHandler, Rest.Path> Route(Rest.Path path)
 		{
-			bool result;
-			if (result = path.IsNull() || path.Head.IsEmpty())
+			return null;
+		}
+		public virtual void Process(Path path, Http.Request request, Http.Response response)
+		{
+			Tuple<Rest.ResourceHandler, Rest.Path> next = null;
+			if (path.NotNull() && path.Head.NotEmpty())
+				next = this.Route(path);
+			if (next.NotNull() && next.Item1.NotNull())
+				next.Item1.Process(next.Item2, request, response);
+			else
 				this.Process(request, response);
-			return result;
 		}
 		protected virtual void Process(Http.Request request, Http.Response response)
 		{
@@ -51,9 +58,7 @@ namespace Aser.Rest
 			switch (request.Method)
 			{
 				case Http.Method.Get:
-					response.Writer.Write("#");
 					responseBody = this.Get(storage, request, response);
-					response.Writer.Write("@");
 					break;
 				case Http.Method.Put:
 					responseBody = this.Put(storage, request, response);

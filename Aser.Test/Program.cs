@@ -1,5 +1,5 @@
 //
-//  Item.cs
+//  Program.cs
 //
 //  Author:
 //       Simon Mika <smika@hx.se>
@@ -19,29 +19,18 @@
 //  You should have received a copy of the GNU Lesser General Public License
 //  along with this program.  If not, see <http://www.gnu.org/licenses/>.
 using System;
-using DB = Kean.DB;
-using Serialize = Kean.Serialize;
-namespace Aser.Rest
+namespace Aser.Test
 {
-	public abstract class Item<T> :
-    DB.Item
-        where T : Item<T>, new()
+	class Program
 	{
-		protected Item()
+		public static void Main(string[] arguments)
 		{
+			Program.Run();
 		}
-		protected Item(long key) :
-			base(key)
+		static void Run()
 		{
-		}
-		public virtual Serialize.Data.Node Serialize(Serialize.IStorage storage)
-		{
-			return storage.Serialize(typeof(T), this, "stream:///");
-		}
-		public virtual bool Deserialize(Serialize.IStorage storage, Serialize.Data.Node node)
-		{
-			return storage.DeserializeContent(node, this);
+			var root = Front.Root.Create("http://localhost:8080");
+			Http.Server.Create((request, response) => root.Process(request.Resource.Path, request, response)).Run(":8080");
 		}
 	}
 }
-

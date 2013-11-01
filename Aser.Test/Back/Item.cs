@@ -19,28 +19,34 @@
 //  You should have received a copy of the GNU Lesser General Public License
 //  along with this program.  If not, see <http://www.gnu.org/licenses/>.
 using System;
+using Kean;
+using Kean.Extension;
 using DB = Kean.DB;
-using Serialize = Kean.Serialize;
-namespace Aser.Rest
+namespace Aser.Test.Back
 {
-	public abstract class Item<T> :
-    DB.Item
-        where T : Item<T>, new()
+	public class Item :
+	Rest.Item<Item>
 	{
-		protected Item()
+		[DB.Index]
+		public string Name { get; set; }
+		[DB.Data]
+		public string Description { get; set; }
+		public Item()
 		{
 		}
-		protected Item(long key) :
+		public Item(int key) :
 			base(key)
 		{
+			this.Name = "Name " + key.AsString();
+			this.Description = "Description of item " + key.AsString();
 		}
-		public virtual Serialize.Data.Node Serialize(Serialize.IStorage storage)
+		public void SetKey(long key)
 		{
-			return storage.Serialize(typeof(T), this, "stream:///");
+			this.Key = key;
 		}
-		public virtual bool Deserialize(Serialize.IStorage storage, Serialize.Data.Node node)
+		public override string ToString()
 		{
-			return storage.DeserializeContent(node, this);
+			return string.Format("[Item: Key={0}, Name={1}, Description={2}]", this.Key, this.Name, this.Description);
 		}
 	}
 }
