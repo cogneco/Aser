@@ -21,13 +21,16 @@
 using System;
 namespace Aser.Http
 {
-    public enum Method
-    {
-        Other,
-        Get,
-        Put,
-        Delete,
-        Post,
-    }
+	public enum Method
+	{
+		Other,
+		Get,
+		Head,
+		Put,
+		Patch,
+		Delete,
+		Post,
+		Options,
+	}
 }
 

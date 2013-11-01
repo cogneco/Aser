@@ -38,17 +38,18 @@ namespace Aser.Test.Front
 		}
 		protected override Tuple<Rest.ResourceHandler, Rest.Path> Route(Rest.Path path)
 		{
-			Tuple<Rest.ResourceHandler, Rest.Path> result;
+			Rest.ResourceHandler result;
 			switch (path.Head)
 			{
 				case "items":
-					result = Tuple.Create<Rest.ResourceHandler, Rest.Path>(this.items, path.Tail);
+					result = this.items;
+					path = path.Tail;
 					break;
 				default:
-					result = base.Route(path);
+					result = null;
 					break;
 			}
-			return result;
+			return result.IsNull() ? null : Tuple.Create(result, path);
 		}
 		public override Serialize.Data.Node Get(Serialize.Storage storage)
 		{

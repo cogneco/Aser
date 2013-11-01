@@ -21,15 +21,31 @@
 using System;
 using Kean;
 using Kean.Extension;
+using Collection = Kean.Collection;
+using Kean.Collection.Extension;
 using Uri = Kean.Uri;
+using Generic = System.Collections.Generic;
+using Integer = Kean.Math.Integer;
+using Serialize = Kean.Serialize;
 namespace Aser.Test.Front
 {
 	public class Item :
 	Rest.ResourceHandler<Back.Item>
 	{
+		public long Key { get { return this.Backend.Key; } }
+		internal Collection.IList<Item> List { private get; set; }
 		Item(Uri.Locator locator, Back.Item backend) :
 			base(locator, backend)
 		{
+		}
+		protected override bool Put(Back.Item @new)
+		{
+			this.Backend = @new;
+			return true;
+		}
+		protected override bool Delete()
+		{
+			return this.List.RemoveFirst(item => item.Backend.Key == this.Backend.Key).NotNull();
 		}
 		public static Item Create(Uri.Locator parentLocator, int key)
 		{

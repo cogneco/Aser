@@ -26,6 +26,7 @@ using Json = Kean.Json;
 using Kean;
 using Kean.Extension;
 using IO = Kean.IO;
+
 namespace Aser.Rest
 {
 	public abstract class ResourceHandler
@@ -39,21 +40,25 @@ namespace Aser.Rest
 		{
 			return null;
 		}
-		public virtual void Process(Path path, Http.Request request, Http.Response response)
+		public void Process(Path path, Http.Request request, Http.Response response)
 		{
 			Tuple<Rest.ResourceHandler, Rest.Path> next = null;
 			if (path.NotNull() && path.Head.NotEmpty())
+			{
 				next = this.Route(path);
-			if (next.NotNull() && next.Item1.NotNull())
-				next.Item1.Process(next.Item2, request, response);
+				if (next.NotNull() && next.Item1.NotNull())
+					next.Item1.Process(next.Item2, request, response);
+				else
+					response.Status = Http.Status.NotFound;
+			}
 			else
 				this.Process(request, response);
 		}
-		protected virtual void Process(Http.Request request, Http.Response response)
+		void Process(Http.Request request, Http.Response response)
 		{
 			Serialize.Storage storage;
 			storage = new Json.Serialize.Storage();
-			response.ContentType = "application/json";
+			response.ContentType = storage.ContentType;
 			Serialize.Data.Node responseBody;
 			switch (request.Method)
 			{
@@ -63,13 +68,17 @@ namespace Aser.Rest
 				case Http.Method.Put:
 					responseBody = this.Put(storage, request, response);
 					break;
+				case Http.Method.Patch:
+					responseBody = this.Patch(storage, request, response);
+					break;
 				case Http.Method.Post:
-					responseBody = this.Post((request as Http.Post).Device, storage, request, response);
+					responseBody = this.Post(storage, request, response);
 					break;
 				case Http.Method.Delete:
 					responseBody = this.Delete(storage, request, response);
 					break;
 				default:
+					responseBody = null;
 					break;
 			}
 			if (responseBody.NotNull())
@@ -78,11 +87,8 @@ namespace Aser.Rest
 				response.Status = Http.Status.MethodNotAllowed;
 			response.End();
 		}
-
 		#region Get, Put, Post, Delete of this resource
-
 		#region Get
-
 		protected virtual Serialize.Data.Node Get(Serialize.Storage storage, Http.Request request, Http.Response response)
 		{
 			return this.Get(storage);
@@ -91,27 +97,39 @@ namespace Aser.Rest
 		{
 			return null;
 		}
-
 		#endregion
-
 		#region Put
-
 		protected virtual Serialize.Data.Node Put(Serialize.Storage storage, Http.Request request, Http.Response response)
 		{
-			return this.Put(storage);
+			return this.Put(storage.Load(request.Device), storage, request, response);
 		}
-		protected virtual Serialize.Data.Node Put(Serialize.Storage storage)
+		protected virtual Serialize.Data.Node Put(Serialize.Data.Node body, Serialize.Storage storage, Http.Request request, Http.Response response)
+		{
+			return this.Put(body, storage);
+		}
+		protected virtual Serialize.Data.Node Put(Serialize.Data.Node body, Serialize.Storage storage)
 		{
 			return null;
 		}
-
 		#endregion
-
-		#region Post
-
-		protected virtual Serialize.Data.Node Post(IO.IByteInDevice device, Serialize.Storage storage, Http.Request request, Http.Response response)
+		#region Patch
+		protected virtual Serialize.Data.Node Patch(Serialize.Storage storage, Http.Request request, Http.Response response)
 		{
-			return this.Post(storage.Load(device), storage, request, response);
+			return this.Patch(storage.Load(request.Device), storage, request, response);
+		}
+		protected virtual Serialize.Data.Node Patch(Serialize.Data.Node body, Serialize.Storage storage, Http.Request request, Http.Response response)
+		{
+			return this.Patch(body, storage);
+		}
+		protected virtual Serialize.Data.Node Patch(Serialize.Data.Node body, Serialize.Storage storage)
+		{
+			return null;
+		}
+		#endregion
+		#region Post
+		protected virtual Serialize.Data.Node Post(Serialize.Storage storage, Http.Request request, Http.Response response)
+		{
+			return this.Post(storage.Load(request.Device), storage, request, response);
 		}
 		protected virtual Serialize.Data.Node Post(Serialize.Data.Node body, Serialize.Storage storage, Http.Request request, Http.Response response)
 		{
@@ -121,11 +139,8 @@ namespace Aser.Rest
 		{
 			return null;
 		}
-
 		#endregion
-
 		#region Delete
-
 		protected virtual Serialize.Data.Node Delete(Serialize.Storage storage, Http.Request request, Http.Response response)
 		{
 			return this.Delete(storage);
@@ -134,29 +149,62 @@ namespace Aser.Rest
 		{
 			return null;
 		}
-
 		#endregion
-
 		#endregion
-
 	}
+
 	public abstract class ResourceHandler<T> :
     ResourceHandler
         where T : Item<T>, new()
 	{
-		T backend;
+		protected T Backend { get; set; }
 		protected ResourceHandler(Uri.Locator locator, T backend) :
 			base(locator)
 		{
-			this.backend = backend;
+			this.Backend = backend;
 		}
+		#region Get
 		public override Serialize.Data.Node Get(Serialize.Storage storage)
 		{
-			Serialize.Data.Node result = this.backend.Serialize(storage);
+			Serialize.Data.Node result = this.Backend.Serialize(storage);
 			if (result is Serialize.Data.Branch)
 				(result as Serialize.Data.Branch).Nodes.Add(new Serialize.Data.String(this.Locator).UpdateName("url"));
 			return result;
 		}
+		#endregion
+		#region Put
+		protected virtual bool Put(T @new)
+		{
+			return false;
+		}
+		protected override Serialize.Data.Node Put(Serialize.Storage storage, Aser.Http.Request request, Aser.Http.Response response)
+		{
+			Serialize.Data.Node result = new Serialize.Data.Branch();
+			T @new = storage.Load<T>(request.Device);
+			if (@new.IsNull())
+				response.Status = Http.Status.BadRequest;
+			else if (!this.Put(@new))
+				response.Status = Http.Status.NotModified;
+			else
+				result = this.Get(storage);
+			return result;
+		}
+		#endregion
+		#region Delete
+		protected virtual bool Delete()
+		{
+			return false;
+		}
+		protected override Serialize.Data.Node Delete(Serialize.Storage storage, Aser.Http.Request request, Aser.Http.Response response)
+		{
+			Serialize.Data.Node result = new Serialize.Data.Branch();
+			if (!this.Delete())
+				response.Status = Http.Status.NotModified;
+			else
+				result = this.Get(storage);
+			return result;
+		}
+		#endregion
 	}
 }
 

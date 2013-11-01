@@ -24,6 +24,7 @@ using Kean.Extension;
 using Uri = Kean.Uri;
 using Owin;
 using Tasks = System.Threading.Tasks.Task;
+
 namespace Aser.Http
 {
 	public class Server :
@@ -50,7 +51,7 @@ namespace Aser.Http
 			this.backend = Microsoft.Owin.Hosting.WebApp.Start(options, applicationBuilder => 
 				applicationBuilder.UseHandler((request, response) =>
 			{
-				this.process(Request.Create(request), new Response(response));
+				this.process(new Request(request), new Response(response));
 			}));
 			return this;
 		}
@@ -73,16 +74,12 @@ namespace Aser.Http
 			}
 			return result;
 		}
-
 		#region IDisposable implementation
-
 		void IDisposable.Dispose()
 		{
 			this.Close();
 		}
-
 		#endregion
-
 		public static Server Create(Action<Request, Response> process)
 		{
 			return new Server(process);

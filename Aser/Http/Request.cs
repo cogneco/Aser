@@ -22,49 +22,75 @@ using System;
 using Kean;
 using Kean.Extension;
 using Uri = Kean.Uri;
+using IO = Kean.IO;
+
 namespace Aser.Http
 {
-	public abstract class Request
+	public class Request
 	{
-		protected Owin.Types.OwinRequest Backend { get; private set; }
-		public abstract Method Method { get; }
-		Uri.Locator resource;
-		public Uri.Locator Resource
+		Owin.Types.OwinRequest backend;
+		#region Method
+		Method? method;
+		public Method Method
+		{ 
+			get
+			{
+				if (!this.method.HasValue)
+					switch (this.backend.Method)
+					{
+						default:
+							this.method = Http.Method.Other;
+							break;
+						case "GET":
+							this.method = Http.Method.Get;
+							break;
+						case "PUT":
+							this.method = Http.Method.Put;
+							break;
+						case "PATCH":
+							this.method = Http.Method.Patch;
+							break;
+						case "POST":
+							this.method = Http.Method.Post;
+							break;
+						case "DELETE":
+							this.method = Http.Method.Delete;
+							break;
+					}
+				return this.method ?? Http.Method.Other;
+			} 
+		}
+		#endregion
+		#region Locator
+		Uri.Locator locator;
+		public Uri.Locator Locator
 		{
 			get
 			{
-				if (this.resource.IsNull())
-					this.resource = this.Backend.Uri.ToString();
-				return this.resource;
+				if (this.locator.IsNull())
+					this.locator = this.backend.Uri.ToString();
+				return this.locator;
 			} 
 		}
-		protected Request(Owin.Types.OwinRequest backend)
+		#endregion
+		#region Device
+		IO.IByteInDevice device;
+		public IO.IByteInDevice Device
 		{
-			this.Backend = backend;
-		}
-		internal static Request Create(Owin.Types.OwinRequest backend)
-		{
-			Request result;
-			switch (backend.Method)
+			get
 			{
-				default:
-					result = null;
-					break;
-				case "GET":
-					result = new Get(backend);
-					break;
-				case "PUT":
-					result = null;
-					break;
-				case "POST":
-					result = new Post(backend);
-					break;
-				case "DELETE":
-					result = null;
-					break;
+				if (this.device.IsNull())
+					this.device = IO.ByteDevice.Wrap(this.backend.Body); 
+				return this.device; 
 			}
-			return result;
 		}
+		#endregion;
+		#region Constructors
+		internal Request(Owin.Types.OwinRequest backend)
+		{
+			this.backend = backend;
+		}
+		#endregion
 	}
 }
 

@@ -23,6 +23,7 @@ using System;
 using Kean;
 using Kean.Extension;
 using Collection = Kean.Collection;
+using Kean.Collection.Extension;
 using Uri = Kean.Uri;
 using Generic = System.Collections.Generic;
 using Integer = Kean.Math.Integer;
@@ -36,25 +37,28 @@ namespace Aser.Test.Front
 		Items(Uri.Locator resource, params Item[] data) :
 			base(resource)
 		{
-			this.data = new Collection.Array.List<Item>(data);
+			this.data = new Collection.Hooked.List<Item>(new Collection.Array.List<Item>());
+			(this.data as Collection.Hooked.List<Item>).Added += (position, item) =>
+			{
+				item.List = this.data;
+			};
+			this.data.Add(data);
 		}
 		protected override Rest.ResourceHandler<Back.Item> Route(string identifier)
 		{
-			int key;
-			return int.TryParse(identifier, out key) ? this.data[key] : base.Route(identifier);
+			long key;
+			return long.TryParse(identifier, out key) ? this.data.Find(item => item.Key == key) : base.Route(identifier);
 		}
 		protected override Generic.IEnumerable<Rest.ResourceHandler<Back.Item>> Get(int limit, int offset)
 		{
 			for (int i = offset; i < offset + limit && i < data.Count; i++)
-				yield return data[i];
+				yield return this.data[i];
 		}
 		protected override Rest.ResourceHandler<Back.Item> Post(Back.Item item)
 		{
 			item.SetKey(this.data.Count);
 			Item result = Item.Create(this.Locator, item);
 			this.data.Add(result);
-			Console.WriteLine(item);
-			Console.WriteLine(new System.Diagnostics.StackTrace());
 			return result;
 		}
 		public static Items Create(Uri.Locator resource)

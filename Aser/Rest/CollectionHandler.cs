@@ -26,6 +26,7 @@ using Kean.Collection.Extension;
 using Kean;
 using Kean.Extension;
 using Generic = System.Collections.Generic;
+
 namespace Aser.Rest
 {
 	public abstract class CollectionHandler<T> :
@@ -43,9 +44,7 @@ namespace Aser.Rest
 		{
 			this.defaultPageSize = defaultPageSize;
 		}
-
 		#region Route
-
 		protected virtual ResourceHandler<T> Route(string identifier)
 		{
 			return null;
@@ -55,19 +54,16 @@ namespace Aser.Rest
 			ResourceHandler result = this.Route(path.Head);
 			return result.NotNull() ? Tuple.Create(result, path.Tail) : base.Route(path);
 		}
-
 		#endregion
-
 		#region Get
-
 		protected virtual Generic.IEnumerable<ResourceHandler<T>> Get(int limit, int offset)
 		{
 			return null;
 		}
 		protected override Serialize.Data.Node Get(Serialize.Storage storage, Aser.Http.Request request, Aser.Http.Response response)
 		{
-			int pageSize = request.Resource.Query.Get("pageSize", this.defaultPageSize);
-			int page = request.Resource.Query.Get("page", 0);
+			int pageSize = request.Locator.Query.Get("pageSize", this.defaultPageSize);
+			int page = request.Locator.Query.Get("page", 0);
 			int last = (this.Count - 1) / pageSize;
 			if (page > 0)
 			{
@@ -88,23 +84,19 @@ namespace Aser.Rest
 			Generic.IEnumerable<ResourceHandler<T>> result = this.Get(limit, offset);
 			return result.NotNull() ? new Serialize.Data.Collection(result.Map(item => item.Get(storage))) : null;
 		}
-
 		#endregion
-
 		#region Post
-
 		protected virtual ResourceHandler<T> Post(T item)
 		{
 			return null;
 		}
-		protected override Serialize.Data.Node Post(Kean.IO.IByteInDevice device, Serialize.Storage storage, Aser.Http.Request request, Aser.Http.Response response)
+		protected override Serialize.Data.Node Post(Serialize.Storage storage, Aser.Http.Request request, Aser.Http.Response response)
 		{
-			ResourceHandler<T> result = this.Post(storage.Load<T>(device));
+			T @new = storage.Load<T>(request.Device);
+			ResourceHandler<T> result = @new.NotNull() ? this.Post(@new) : null;
 			return result.NotNull() ? result.Get(storage) : null;
 		}
-
 		#endregion
-
 	}
 }
 

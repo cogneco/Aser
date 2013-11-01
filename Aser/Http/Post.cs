@@ -25,6 +25,7 @@ using Uri = Kean.Uri;
 using Collection = Kean.Collection;
 using Kean.Collection.Extension;
 using IO = Kean.IO;
+
 namespace Aser.Http
 {
 	public class Post :
@@ -37,7 +38,7 @@ namespace Aser.Http
 			get
 			{
 				if (this.device.IsNull())
-					this.device = IO.ByteDevice.Wrap(this.Backend.Body); 
+					this.device = IO.ByteDevice.Wrap(this.backend.Body); 
 				return this.device; 
 			}
 		}

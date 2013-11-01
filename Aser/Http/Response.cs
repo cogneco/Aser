@@ -22,13 +22,22 @@ using System;
 using Kean;
 using Kean.Extension;
 using IO = Kean.IO;
+
 namespace Aser.Http
 {
 	public class Response
 	{
 		Owin.Types.OwinResponse backend;
+		#region ContentType
 		public string ContentType { get { return this.backend.ContentType; } set { this.backend.ContentType = value; } }
+		#endregion
+		#region Link
 		public Header.Links Link { get; private set; }
+		#endregion
+		#region Status
+		public Status Status { get { return (Status)this.backend.StatusCode; } set { this.backend.StatusCode = value; } }
+		#endregion
+		#region Writer
 		IO.ICharacterWriter writer;
 		public IO.ICharacterWriter Writer
 		{
@@ -39,6 +48,8 @@ namespace Aser.Http
 				return this.writer;
 			}
 		}
+		#endregion
+		#region Device
 		IO.IByteOutDevice device;
 		public IO.IByteOutDevice Device
 		{
@@ -52,7 +63,7 @@ namespace Aser.Http
 				return this.device; 
 			}
 		}
-		public Status Status { get; set; }
+		#endregion
 		internal Response(Owin.Types.OwinResponse backend)
 		{
 			this.backend = backend;
@@ -60,8 +71,10 @@ namespace Aser.Http
 		}
 		public bool End()
 		{
-			this.backend.StatusCode = this.Status;
-			return true;
+			bool result;
+			if (!(result = this.Status.Success))
+				this.Writer.WriteLine((string)this.Status);
+			return result;
 		}
 	}
 }
