@@ -36,6 +36,10 @@ namespace Aser.Test.Front
 		{
 			this.items = Items.Create(resource + "items");
 		}
+		public override Serialize.Data.Node Serialize()
+		{
+			return new Serialize.Data.Branch(new Serialize.Data.String(this.Locator + "items").UpdateName("itemsUrl"));
+		}
 		protected override Tuple<Rest.ResourceHandler, Rest.Path> Route(Rest.Path path)
 		{
 			Rest.ResourceHandler result;
@@ -50,10 +54,6 @@ namespace Aser.Test.Front
 					break;
 			}
 			return result.IsNull() ? null : Tuple.Create(result, path);
-		}
-		public override Serialize.Data.Node Serialize()
-		{
-			return new Serialize.Data.Branch(new Serialize.Data.String(this.Locator + "items").UpdateName("itemsUrl"));
 		}
 		public static Root Create(Uri.Locator resource)
 		{

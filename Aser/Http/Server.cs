@@ -51,7 +51,14 @@ namespace Aser.Http
 			this.backend = Microsoft.Owin.Hosting.WebApp.Start(options, applicationBuilder => 
 				applicationBuilder.UseHandler((request, response) =>
 			{
-				this.process(new Request(request), new Response(response));
+				try
+				{
+					this.process(new Request(request), new Response(response));
+				}
+				catch (Exception ex)
+				{
+					Console.WriteLine(ex);
+				}
 			}));
 			return this;
 		}

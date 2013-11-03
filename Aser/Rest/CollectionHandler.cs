@@ -82,8 +82,15 @@ namespace Aser.Rest
 			if (result = content.NotNull())
 			{
 				response.Status = Http.Status.OK;
-				if (!(result = response.Send((Serialize.Data.Node)new Serialize.Data.Collection(content.Map(item => item.Serialize())))))
-					response.Status = Http.Status.InternalServerError;
+				try
+				{
+					if (!(result = response.Send((Serialize.Data.Node)new Serialize.Data.Collection(content.Map(item => item.Serialize())))))
+						response.Status = Http.Status.InternalServerError;
+				}
+				catch (Exception ex)
+				{
+					Console.WriteLine(ex);
+				}
 			}
 			else
 				response.Status = Http.Status.MethodNotAllowed;

@@ -138,6 +138,7 @@ namespace Aser.Rest
     ResourceHandler
         where T : Item<T>, new()
 	{
+		public long Key { get { return this.Backend.Key; } }
 		protected T Backend { get; set; }
 		protected ResourceHandler(Uri.Locator locator, T backend) :
 			base(locator)
