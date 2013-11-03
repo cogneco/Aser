@@ -21,6 +21,7 @@
 using System;
 using DB = Kean.DB;
 using Serialize = Kean.Serialize;
+
 namespace Aser.Rest
 {
 	public abstract class Item<T> :
@@ -34,13 +35,13 @@ namespace Aser.Rest
 			base(key)
 		{
 		}
-		public virtual Serialize.Data.Node Serialize(Serialize.IStorage storage)
+		public virtual Serialize.Data.Node Serialize()
 		{
-			return storage.Serialize(typeof(T), this, "stream:///");
+			return Kean.Serialize.Storer.Store<T>(this as T);
 		}
-		public virtual bool Deserialize(Serialize.IStorage storage, Serialize.Data.Node node)
+		public virtual bool Deserialize(Serialize.Data.Node node)
 		{
-			return storage.DeserializeContent(node, this);
+			return Kean.Serialize.Storer.Load(node, this);
 		}
 	}
 }

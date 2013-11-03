@@ -51,7 +51,7 @@ namespace Aser.Test.Front
 			}
 			return result.IsNull() ? null : Tuple.Create(result, path);
 		}
-		public override Serialize.Data.Node Get(Serialize.Storage storage)
+		public override Serialize.Data.Node Serialize()
 		{
 			return new Serialize.Data.Branch(new Serialize.Data.String(this.Locator + "items").UpdateName("itemsUrl"));
 		}

@@ -40,6 +40,8 @@ namespace Aser.Rest
 		{
 			return null;
 		}
+		public abstract Serialize.Data.Node Serialize();
+		#region Process
 		public void Process(Path path, Http.Request request, Http.Response response)
 		{
 			Tuple<Rest.ResourceHandler, Rest.Path> next = null;
@@ -54,100 +56,79 @@ namespace Aser.Rest
 			else
 				this.Process(request, response);
 		}
-		void Process(Http.Request request, Http.Response response)
+		bool Process(Http.Request request, Http.Response response)
 		{
-			Serialize.Storage storage;
-			storage = new Json.Serialize.Storage();
-			response.ContentType = storage.ContentType;
-			Serialize.Data.Node responseBody;
+			response.ContentType = "application/json";
+			bool result;
 			switch (request.Method)
 			{
 				case Http.Method.Get:
-					responseBody = this.Get(storage, request, response);
+					result = this.Get(request, response);
 					break;
 				case Http.Method.Put:
-					responseBody = this.Put(storage, request, response);
+					result = this.Put(request, response);
 					break;
 				case Http.Method.Patch:
-					responseBody = this.Patch(storage, request, response);
+					result = this.Patch(request, response);
 					break;
 				case Http.Method.Post:
-					responseBody = this.Post(storage, request, response);
+					result = this.Post(request, response);
 					break;
 				case Http.Method.Delete:
-					responseBody = this.Delete(storage, request, response);
+					result = this.Delete(request, response);
 					break;
 				default:
-					responseBody = null;
+					result = false;
+					response.Status = Http.Status.NotImplemented;
 					break;
 			}
-			if (responseBody.NotNull())
-				storage.Store(responseBody, response.Device);
-			else
-				response.Status = Http.Status.MethodNotAllowed;
 			response.End();
+			return result;
 		}
+		#endregion
 		#region Get, Put, Post, Delete of this resource
 		#region Get
-		protected virtual Serialize.Data.Node Get(Serialize.Storage storage, Http.Request request, Http.Response response)
+		protected virtual bool Get(Http.Request request, Http.Response response)
 		{
-			return this.Get(storage);
-		}
-		public virtual Serialize.Data.Node Get(Serialize.Storage storage)
-		{
-			return null;
+			bool result;
+			Serialize.Data.Node content = this.Serialize();
+			if (result = content.NotNull())
+			{
+				response.Status = Http.Status.OK;
+				if (!(result = response.Send(content)))
+					response.Status = Http.Status.InternalServerError;
+			}
+			else
+				response.Status = Http.Status.MethodNotAllowed;
+			return result;
 		}
 		#endregion
 		#region Put
-		protected virtual Serialize.Data.Node Put(Serialize.Storage storage, Http.Request request, Http.Response response)
+		protected virtual bool Put(Http.Request request, Http.Response response)
 		{
-			return this.Put(storage.Load(request.Device), storage, request, response);
-		}
-		protected virtual Serialize.Data.Node Put(Serialize.Data.Node body, Serialize.Storage storage, Http.Request request, Http.Response response)
-		{
-			return this.Put(body, storage);
-		}
-		protected virtual Serialize.Data.Node Put(Serialize.Data.Node body, Serialize.Storage storage)
-		{
-			return null;
+			response.Status = Http.Status.MethodNotAllowed;
+			return false;
 		}
 		#endregion
 		#region Patch
-		protected virtual Serialize.Data.Node Patch(Serialize.Storage storage, Http.Request request, Http.Response response)
+		protected virtual bool Patch(Http.Request request, Http.Response response)
 		{
-			return this.Patch(storage.Load(request.Device), storage, request, response);
-		}
-		protected virtual Serialize.Data.Node Patch(Serialize.Data.Node body, Serialize.Storage storage, Http.Request request, Http.Response response)
-		{
-			return this.Patch(body, storage);
-		}
-		protected virtual Serialize.Data.Node Patch(Serialize.Data.Node body, Serialize.Storage storage)
-		{
-			return null;
+			response.Status = Http.Status.MethodNotAllowed;
+			return false;
 		}
 		#endregion
 		#region Post
-		protected virtual Serialize.Data.Node Post(Serialize.Storage storage, Http.Request request, Http.Response response)
+		protected virtual bool Post(Http.Request request, Http.Response response)
 		{
-			return this.Post(storage.Load(request.Device), storage, request, response);
-		}
-		protected virtual Serialize.Data.Node Post(Serialize.Data.Node body, Serialize.Storage storage, Http.Request request, Http.Response response)
-		{
-			return this.Post(body, storage);
-		}
-		protected virtual Serialize.Data.Node Post(Serialize.Data.Node body, Serialize.Storage storage)
-		{
-			return null;
+			response.Status = Http.Status.MethodNotAllowed;
+			return false;
 		}
 		#endregion
 		#region Delete
-		protected virtual Serialize.Data.Node Delete(Serialize.Storage storage, Http.Request request, Http.Response response)
+		protected virtual bool Delete(Http.Request request, Http.Response response)
 		{
-			return this.Delete(storage);
-		}
-		protected virtual Serialize.Data.Node Delete(Serialize.Storage storage)
-		{
-			return null;
+			response.Status = Http.Status.MethodNotAllowed;
+			return false;
 		}
 		#endregion
 		#endregion
@@ -163,46 +144,52 @@ namespace Aser.Rest
 		{
 			this.Backend = backend;
 		}
-		#region Get
-		public override Serialize.Data.Node Get(Serialize.Storage storage)
+		public override Serialize.Data.Node Serialize()
 		{
-			Serialize.Data.Node result = this.Backend.Serialize(storage);
+			Serialize.Data.Node result = this.Backend.Serialize();
 			if (result is Serialize.Data.Branch)
 				(result as Serialize.Data.Branch).Nodes.Add(new Serialize.Data.String(this.Locator).UpdateName("url"));
 			return result;
 		}
+		#region Get
+		protected override bool Get(Http.Request request, Http.Response response)
+		{
+			Serialize.Data.Node node = this.Get();
+			return (response.Status = node.NotNull() && response.Send(node) ? Http.Status.OK : Http.Status.NotImplemented).Success;
+		}
+		protected virtual Serialize.Data.Node Get()
+		{
+			return this.Serialize();
+		}
 		#endregion
 		#region Put
-		protected virtual bool Put(T @new)
+		protected override bool Put(Http.Request request, Http.Response response)
 		{
-			return false;
+			Http.Status result;
+			T @new = request.Receive<T>();
+			return (response.Status = @new.IsNull() ? 
+				Http.Status.BadRequest : 
+				(result = this.Put(@new)).Success && response.Send(this.Serialize()) ? 
+				result : 
+				Http.Status.InternalServerError
+			).Success;
 		}
-		protected override Serialize.Data.Node Put(Serialize.Storage storage, Aser.Http.Request request, Aser.Http.Response response)
+		protected virtual Http.Status Put(T @new)
 		{
-			Serialize.Data.Node result = new Serialize.Data.Branch();
-			T @new = storage.Load<T>(request.Device);
-			if (@new.IsNull())
-				response.Status = Http.Status.BadRequest;
-			else if (!this.Put(@new))
-				response.Status = Http.Status.NotModified;
-			else
-				result = this.Get(storage);
-			return result;
+			return Http.Status.MethodNotAllowed;
 		}
 		#endregion
 		#region Delete
-		protected virtual bool Delete()
+		protected override bool Delete(Http.Request request, Http.Response response)
 		{
-			return false;
-		}
-		protected override Serialize.Data.Node Delete(Serialize.Storage storage, Aser.Http.Request request, Aser.Http.Response response)
-		{
-			Serialize.Data.Node result = new Serialize.Data.Branch();
-			if (!this.Delete())
-				response.Status = Http.Status.NotModified;
-			else
-				result = this.Get(storage);
+			bool result;
+			if (result = (response.Status = this.Delete()).Success)
+				response.Send(this.Serialize());
 			return result;
+		}
+		protected virtual Http.Status Delete()
+		{
+			return Http.Status.MethodNotAllowed;
 		}
 		#endregion
 	}

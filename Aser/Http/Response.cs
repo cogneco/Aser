@@ -22,6 +22,10 @@ using System;
 using Kean;
 using Kean.Extension;
 using IO = Kean.IO;
+using Serialize = Kean.Serialize;
+using Json = Kean.Json;
+using Xml = Kean.Xml;
+using Uri = Kean.Uri;
 
 namespace Aser.Http
 {
@@ -36,6 +40,26 @@ namespace Aser.Http
 		#endregion
 		#region Status
 		public Status Status { get { return (Status)this.backend.StatusCode; } set { this.backend.StatusCode = value; } }
+		#endregion
+		#region Storage
+		Serialize.Storage storage;
+		Serialize.Storage Storage
+		{
+			get
+			{ 
+				if (this.storage.IsNull())
+					switch (this.ContentType)
+					{
+						case "application/json":
+							this.storage = new Json.Serialize.Storage();
+							break;
+						case "application/xml":
+							this.storage = new Xml.Serialize.Storage();
+							break;
+					}
+				return this.storage;
+			}
+		}
 		#endregion
 		#region Writer
 		IO.ICharacterWriter writer;
@@ -69,6 +93,16 @@ namespace Aser.Http
 			this.backend = backend;
 			this.Link = new Header.Links();
 		}
+		#region Send
+		public bool Send<T>(T value)
+		{
+			return this.Storage.Store<T>(value, this.Device);
+		}
+		public bool Send(Serialize.Data.Node value)
+		{
+			return this.Storage.Store(value, this.Device);
+		}
+		#endregion
 		public bool End()
 		{
 			bool result;

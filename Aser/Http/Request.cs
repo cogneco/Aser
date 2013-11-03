@@ -21,8 +21,11 @@
 using System;
 using Kean;
 using Kean.Extension;
-using Uri = Kean.Uri;
 using IO = Kean.IO;
+using Serialize = Kean.Serialize;
+using Json = Kean.Json;
+using Xml = Kean.Xml;
+using Uri = Kean.Uri;
 
 namespace Aser.Http
 {
@@ -73,6 +76,26 @@ namespace Aser.Http
 			} 
 		}
 		#endregion
+		#region Storage
+		Serialize.Storage storage;
+		Serialize.Storage Storage
+		{
+			get
+			{ 
+				if (this.storage.IsNull())
+					switch ("application/json")
+					{
+						case "application/json":
+							this.storage = new Json.Serialize.Storage();
+							break;
+						case "application/xml":
+							this.storage = new Xml.Serialize.Storage();
+							break;
+					}
+				return this.storage;
+			}
+		}
+		#endregion
 		#region Device
 		IO.IByteInDevice device;
 		public IO.IByteInDevice Device
@@ -89,6 +112,16 @@ namespace Aser.Http
 		internal Request(Owin.Types.OwinRequest backend)
 		{
 			this.backend = backend;
+		}
+		#endregion
+		#region Send
+		public T Receive<T>()
+		{
+			return this.Storage.Load<T>(this.Device);
+		}
+		public Serialize.Data.Node Receive()
+		{
+			return this.Storage.Load(this.Device);
 		}
 		#endregion
 	}

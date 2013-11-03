@@ -44,6 +44,10 @@ namespace Aser.Rest
 		{
 			this.defaultPageSize = defaultPageSize;
 		}
+		public override Serialize.Data.Node Serialize()
+		{
+			return null;
+		}
 		#region Route
 		protected virtual ResourceHandler<T> Route(string identifier)
 		{
@@ -56,11 +60,7 @@ namespace Aser.Rest
 		}
 		#endregion
 		#region Get
-		protected virtual Generic.IEnumerable<ResourceHandler<T>> Get(int limit, int offset)
-		{
-			return null;
-		}
-		protected override Serialize.Data.Node Get(Serialize.Storage storage, Aser.Http.Request request, Aser.Http.Response response)
+		protected override bool Get(Aser.Http.Request request, Aser.Http.Response response)
 		{
 			int pageSize = request.Locator.Query.Get("pageSize", this.defaultPageSize);
 			int page = request.Locator.Query.Get("page", 0);
@@ -77,24 +77,45 @@ namespace Aser.Rest
 					response.Link.Add(new Http.Header.Link(this.Locator + KeyValue.Create("page", (page + 1).AsString())) { Relatation = Http.Header.LinkRelation.Next });
 				response.Link.Add(new Http.Header.Link(this.Locator + KeyValue.Create("page", last.AsString())) { Relatation = Http.Header.LinkRelation.Last });
 			}
-			return this.Get(storage, pageSize, page * pageSize);
+			Generic.IEnumerable<ResourceHandler<T>> content = this.Get(pageSize, page * pageSize);
+			bool result;
+			if (result = content.NotNull())
+			{
+				response.Status = Http.Status.OK;
+				if (!(result = response.Send((Serialize.Data.Node)new Serialize.Data.Collection(content.Map(item => item.Serialize())))))
+					response.Status = Http.Status.InternalServerError;
+			}
+			else
+				response.Status = Http.Status.MethodNotAllowed;
+			return result;
 		}
-		protected virtual Serialize.Data.Node Get(Serialize.Storage storage, int limit, int offset)
-		{
-			Generic.IEnumerable<ResourceHandler<T>> result = this.Get(limit, offset);
-			return result.NotNull() ? new Serialize.Data.Collection(result.Map(item => item.Get(storage))) : null;
-		}
-		#endregion
-		#region Post
-		protected virtual ResourceHandler<T> Post(T item)
+		protected virtual Generic.IEnumerable<ResourceHandler<T>> Get(int limit, int offset)
 		{
 			return null;
 		}
-		protected override Serialize.Data.Node Post(Serialize.Storage storage, Aser.Http.Request request, Aser.Http.Response response)
+		#endregion
+		#region Post
+		protected override bool Post(Http.Request request, Http.Response response)
 		{
-			T @new = storage.Load<T>(request.Device);
-			ResourceHandler<T> result = @new.NotNull() ? this.Post(@new) : null;
-			return result.NotNull() ? result.Get(storage) : null;
+			bool result;
+			T @new = request.Receive<T>();
+			if (result = @new.NotNull())
+			{
+				ResourceHandler<T> data = this.Post(@new);
+				if (result = data.NotNull())
+				{
+					response.Status = Http.Status.Created;
+					if (!(result = response.Send(data.Serialize())))
+						response.Status = Http.Status.InternalServerError;
+				}
+				else
+					response.Status = Http.Status.MethodNotAllowed;
+			}
+			return result;
+		}
+		protected virtual ResourceHandler<T> Post(T item)
+		{
+			return null;
 		}
 		#endregion
 	}

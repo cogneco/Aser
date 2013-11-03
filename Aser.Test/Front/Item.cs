@@ -38,14 +38,14 @@ namespace Aser.Test.Front
 			base(locator, backend)
 		{
 		}
-		protected override bool Put(Back.Item @new)
+		protected override Http.Status Put(Back.Item @new)
 		{
 			this.Backend = @new;
-			return true;
+			return Http.Status.Accepted;
 		}
-		protected override bool Delete()
+		protected override Http.Status Delete()
 		{
-			return this.List.RemoveFirst(item => item.Backend.Key == this.Backend.Key).NotNull();
+			return this.List.RemoveFirst(item => item.Backend.Key == this.Backend.Key).NotNull() ? Http.Status.Accepted : Http.Status.InternalServerError;
 		}
 		public static Item Create(Uri.Locator parentLocator, int key)
 		{
