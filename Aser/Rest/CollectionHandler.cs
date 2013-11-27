@@ -26,7 +26,6 @@ using Kean.Collection.Extension;
 using Kean;
 using Kean.Extension;
 using Generic = System.Collections.Generic;
-using DB = Kean.DB;
 
 namespace Aser.Rest
 {
