@@ -42,6 +42,7 @@
     <Compile Include="Front\Items.cs" />
     <Compile Include="Front\Item.cs" />
     <Compile Include="Front\Root.cs" />
+    <Compile Include="Back\Items.cs" />
   </ItemGroup>
   <Import Project="$(MSBuildBinPath)\Microsoft.CSharp.targets" />
   <ItemGroup>

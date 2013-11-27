@@ -1,5 +1,5 @@
 //
-//  Item.cs
+//  Items.cs
 //
 //  Author:
 //       Simon Mika <smika@hx.se>
@@ -27,18 +27,37 @@ using Uri = Kean.Uri;
 using Generic = System.Collections.Generic;
 using Integer = Kean.Math.Integer;
 using Serialize = Kean.Serialize;
-namespace Aser.Test.Front
+namespace Aser.Test.Back
 {
-	public class Item :
-	Rest.ResourceHandler<Back.Item>
+	public class Items :
+	Rest.ICollection<Item>
 	{
-		Item(Items parent, Back.Item backend) :
-			base(parent.Locator + backend.Key.AsString(), backend)
+		Collection.List<Item> list = new Collection.List<Item>();
+		long nextKey;
+		public int Count { get { return this.list.Count; } }
+		public Items(Generic.IEnumerable<Item> items)
 		{
+			foreach (Item item in items)
+			{
+				this.Create(item);
+				item.Name = "Name " + item.Key.AsString();
+				item.Description = "Description of item " + item.Key.AsString();
+			}
 		}
-		public static Item Create(Items parent, Back.Item backend)
+		public long Create(Item resource)
 		{
-			return parent.NotNull() && backend.NotNull() ? new Item(parent, backend) : null;
+			this.list.Add(resource);
+			resource.List = this.list;
+			return resource.Key = this.nextKey++;
+		}
+		public Item Open(long key)
+		{
+			return this.list.Find(item => item.Key == key);
+		}
+		public Generic.IEnumerable<Item> Open(int limit, int offset)
+		{
+			for (int i = offset; i < offset + limit && i < this.list.Count; i++)
+				yield return this.list[i];
 		}
 	}
 }

@@ -21,28 +21,31 @@
 using System;
 using Kean;
 using Kean.Extension;
-using DB = Kean.DB;
+using Serialize = Kean.Serialize;
+using Collection = Kean.Collection;
+using Kean.Collection.Extension;
 namespace Aser.Test.Back
 {
 	public class Item :
-	Rest.Item<Item>
+	Rest.IResource
 	{
-		[DB.Index]
+		internal Collection.IList<Item> List { get; set; }
+		[Serialize.Parameter]
+		public long Key { get; set; }
+		[Serialize.Parameter]
 		public string Name { get; set; }
-		[DB.Data]
+		[Serialize.Parameter]
 		public string Description { get; set; }
 		public Item()
 		{
 		}
-		public Item(int key) :
-			base(key)
+		public bool Save()
 		{
-			this.Name = "Name " + key.AsString();
-			this.Description = "Description of item " + key.AsString();
+			return true;
 		}
-		public void SetKey(long key)
+		public bool Remove()
 		{
-			this.Key = key;
+			return this.List.Remove(item => item.Key == this.Key).NotNull();
 		}
 		public override string ToString()
 		{

@@ -29,125 +29,20 @@ using IO = Kean.IO;
 
 namespace Aser.Rest
 {
-	public abstract class ResourceHandler
+	public abstract class ResourceHandler<R> :
+    Handler
+		where R : IResource, new()
 	{
-		public Uri.Locator Locator { get; private set; }
-		protected ResourceHandler(Uri.Locator locator)
-		{
-			this.Locator = locator;
-		}
-		protected virtual Tuple<Rest.ResourceHandler, Rest.Path> Route(Rest.Path path)
-		{
-			return null;
-		}
-		public abstract Serialize.Data.Node Serialize();
-		#region Process
-		public void Process(Path path, Http.Request request, Http.Response response)
-		{
-			Tuple<Rest.ResourceHandler, Rest.Path> next = null;
-			if (path.NotNull() && path.Head.NotEmpty())
-			{
-				next = this.Route(path);
-				if (next.NotNull() && next.Item1.NotNull())
-					next.Item1.Process(next.Item2, request, response);
-				else
-					response.Status = Http.Status.NotFound;
-			}
-			else
-				this.Process(request, response);
-		}
-		bool Process(Http.Request request, Http.Response response)
-		{
-			response.ContentType = "application/json";
-			bool result;
-			switch (request.Method)
-			{
-				case Http.Method.Get:
-					result = this.Get(request, response);
-					break;
-				case Http.Method.Put:
-					result = this.Put(request, response);
-					break;
-				case Http.Method.Patch:
-					result = this.Patch(request, response);
-					break;
-				case Http.Method.Post:
-					result = this.Post(request, response);
-					break;
-				case Http.Method.Delete:
-					result = this.Delete(request, response);
-					break;
-				default:
-					result = false;
-					response.Status = Http.Status.NotImplemented;
-					break;
-			}
-			response.End();
-			return result;
-		}
-		#endregion
-		#region Get, Put, Post, Delete of this resource
-		#region Get
-		protected virtual bool Get(Http.Request request, Http.Response response)
-		{
-			bool result;
-			Serialize.Data.Node content = this.Serialize();
-			if (result = content.NotNull())
-			{
-				response.Status = Http.Status.OK;
-				if (!(result = response.Send(content)))
-					response.Status = Http.Status.InternalServerError;
-			}
-			else
-				response.Status = Http.Status.MethodNotAllowed;
-			return result;
-		}
-		#endregion
-		#region Put
-		protected virtual bool Put(Http.Request request, Http.Response response)
-		{
-			response.Status = Http.Status.MethodNotAllowed;
-			return false;
-		}
-		#endregion
-		#region Patch
-		protected virtual bool Patch(Http.Request request, Http.Response response)
-		{
-			response.Status = Http.Status.MethodNotAllowed;
-			return false;
-		}
-		#endregion
-		#region Post
-		protected virtual bool Post(Http.Request request, Http.Response response)
-		{
-			response.Status = Http.Status.MethodNotAllowed;
-			return false;
-		}
-		#endregion
-		#region Delete
-		protected virtual bool Delete(Http.Request request, Http.Response response)
-		{
-			response.Status = Http.Status.MethodNotAllowed;
-			return false;
-		}
-		#endregion
-		#endregion
-	}
-
-	public abstract class ResourceHandler<T> :
-    ResourceHandler
-        where T : Item<T>, new()
-	{
-		public long Key { get { return this.Backend.Key; } }
-		protected T Backend { get; set; }
-		protected ResourceHandler(Uri.Locator locator, T backend) :
+		protected R Data { get; private set; }
+		public long Key { get { return this.Data.Key; } }
+		protected ResourceHandler(Uri.Locator locator, R data) :
 			base(locator)
 		{
-			this.Backend = backend;
+			this.Data = data;
 		}
 		public override Serialize.Data.Node Serialize()
 		{
-			Serialize.Data.Node result = this.Backend.Serialize();
+			Serialize.Data.Node result = Kean.Serialize.Storer.Store<R>(this.Data);
 			if (result is Serialize.Data.Branch)
 				(result as Serialize.Data.Branch).Nodes.Add(new Serialize.Data.String(this.Locator).UpdateName("url"));
 			return result;
@@ -167,7 +62,7 @@ namespace Aser.Rest
 		protected override bool Put(Http.Request request, Http.Response response)
 		{
 			Http.Status result;
-			T @new = request.Receive<T>();
+			R @new = request.Receive<R>();
 			return (response.Status = @new.IsNull() ? 
 				Http.Status.BadRequest : 
 				(result = this.Put(@new)).Success && response.Send(this.Serialize()) ? 
@@ -175,9 +70,9 @@ namespace Aser.Rest
 				Http.Status.InternalServerError
 			).Success;
 		}
-		protected virtual Http.Status Put(T @new)
+		protected virtual Http.Status Put(R @new)
 		{
-			return Http.Status.MethodNotAllowed;
+			return @new.IsNull() ? Http.Status.BadRequest : (this.Data = @new).Save() ? Http.Status.OK : Http.Status.InternalServerError;
 		}
 		#endregion
 		#region Delete
@@ -190,7 +85,7 @@ namespace Aser.Rest
 		}
 		protected virtual Http.Status Delete()
 		{
-			return Http.Status.MethodNotAllowed;
+			return this.Data.Remove() ? Http.Status.OK : Http.Status.InternalServerError;
 		}
 		#endregion
 	}

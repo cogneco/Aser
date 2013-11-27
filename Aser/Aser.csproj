@@ -55,7 +55,6 @@
     <Compile Include="Http\Response.cs" />
     <Compile Include="Http\Method.cs" />
     <Compile Include="Http\Status.cs" />
-    <Compile Include="Rest\Item.cs" />
     <Compile Include="Rest\ResourceHandler.cs" />
     <Compile Include="Rest\Path.cs" />
     <Compile Include="Rest\CollectionHandler.cs" />
@@ -63,6 +62,9 @@
     <Compile Include="Http\Header\LinkRelation.cs" />
     <Compile Include="Http\Header\Links.cs" />
     <Compile Include="Http\Server.cs" />
+    <Compile Include="Rest\IResource.cs" />
+    <Compile Include="Rest\ICollection.cs" />
+    <Compile Include="Rest\Handler.cs" />
   </ItemGroup>
   <Import Project="$(MSBuildBinPath)\Microsoft.CSharp.targets" />
   <ProjectExtensions>

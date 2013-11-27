@@ -28,7 +28,7 @@ using Serialize = Kean.Serialize;
 namespace Aser.Test.Front
 {
 	public class Root :
-	Rest.ResourceHandler
+	Rest.Handler
 	{
 		Items items;
 		Root(Uri.Locator resource) :
@@ -40,9 +40,9 @@ namespace Aser.Test.Front
 		{
 			return new Serialize.Data.Branch(new Serialize.Data.String(this.Locator + "items").UpdateName("itemsUrl"));
 		}
-		protected override Tuple<Rest.ResourceHandler, Rest.Path> Route(Rest.Path path)
+		protected override Tuple<Rest.Handler, Rest.Path> Route(Rest.Path path)
 		{
-			Rest.ResourceHandler result;
+			Rest.Handler result;
 			switch (path.Head)
 			{
 				case "items":

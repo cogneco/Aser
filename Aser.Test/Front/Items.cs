@@ -30,43 +30,22 @@ using Integer = Kean.Math.Integer;
 namespace Aser.Test.Front
 {
 	public class Items :
-	Rest.CollectionHandler<Back.Item>
+	Rest.CollectionHandler<Back.Items, Back.Item>
 	{
-		Collection.IList<Item> data;
-		protected override int Count { get { return this.data.Count; } }
-		Items(Uri.Locator resource, params Item[] data) :
-			base(resource)
+		Items(Uri.Locator locator, params Back.Item[] data) :
+			base(locator, new Back.Items(data))
 		{
-			this.data = new Collection.Hooked.List<Item>(new Collection.Array.List<Item>());
-			(this.data as Collection.Hooked.List<Item>).Added += (position, item) =>
-			{
-				item.List = this.data;
-			};
-			this.data.Add(data);
 		}
-		protected override Rest.ResourceHandler<Back.Item> Route(string identifier)
+		protected override Rest.ResourceHandler<Back.Item> Map(Back.Item resource)
 		{
-			long key;
-			return long.TryParse(identifier, out key) ? this.data.Find(item => item.Key == key) : base.Route(identifier);
+			return Item.Create(this, resource);
 		}
-		protected override Generic.IEnumerable<Rest.ResourceHandler<Back.Item>> Get(int limit, int offset)
+		public static Items Create(Uri.Locator locator)
 		{
-			for (int i = offset; i < offset + limit && i < data.Count; i++)
-				yield return this.data[i];
-		}
-		protected override Rest.ResourceHandler<Back.Item> Post(Back.Item item)
-		{
-			item.SetKey(this.data.Count);
-			Item result = Item.Create(this.Locator, item);
-			this.data.Add(result);
-			return result;
-		}
-		public static Items Create(Uri.Locator resource)
-		{
-			Item[] data = new Item[100];
+			Back.Item[] data = new Back.Item[100];
 			for (int i = 0; i < 100; i++)
-				data[i] = Item.Create(resource, i);
-			return new Items(resource, data);
+				data[i] = new Back.Item();
+			return new Items(locator, data);
 		}
 	}
 }

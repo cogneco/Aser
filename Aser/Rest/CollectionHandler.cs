@@ -26,45 +26,45 @@ using Kean.Collection.Extension;
 using Kean;
 using Kean.Extension;
 using Generic = System.Collections.Generic;
+using DB = Kean.DB;
 
 namespace Aser.Rest
 {
-	public abstract class CollectionHandler<T> :
-	ResourceHandler
-		where T : Item<T>, new()
+	public abstract class CollectionHandler<C, R> :
+	Handler
+		where C : ICollection<R>
+		where R : IResource, new()
 	{
-		int defaultPageSize { get; set; }
-		protected abstract int Count { get; }
-		protected CollectionHandler(Uri.Locator locator) :
-			this(locator, 30)
-		{
-		}
-		protected CollectionHandler(Uri.Locator locator, int defaultPageSize) :
+		protected C Data { get; private set; }
+		protected int DefaultPageSize { get { return 30; } }
+		protected CollectionHandler(Uri.Locator locator, C data) :
 			base(locator)
 		{
-			this.defaultPageSize = defaultPageSize;
+			this.Data = data;
 		}
 		public override Serialize.Data.Node Serialize()
 		{
 			return null;
 		}
+		protected abstract ResourceHandler<R> Map(R resource);
 		#region Route
-		protected virtual ResourceHandler<T> Route(string identifier)
+		protected virtual ResourceHandler<R> Route(string identifier)
 		{
-			return null;
+			long key;
+			return long.TryParse(identifier, out key) ? this.Map(this.Data.Open(key)) : null;
 		}
-		protected override Tuple<ResourceHandler, Path> Route(Path path)
+		protected override Tuple<Handler, Path> Route(Path path)
 		{
-			ResourceHandler result = this.Route(path.Head);
+			Handler result = this.Route(path.Head);
 			return result.NotNull() ? Tuple.Create(result, path.Tail) : base.Route(path);
 		}
 		#endregion
 		#region Get
 		protected override bool Get(Aser.Http.Request request, Aser.Http.Response response)
 		{
-			int pageSize = request.Locator.Query.Get("pageSize", this.defaultPageSize);
+			int pageSize = request.Locator.Query.Get("pageSize", this.DefaultPageSize);
 			int page = request.Locator.Query.Get("page", 0);
-			int last = (this.Count - 1) / pageSize;
+			int last = (this.Data.Count - 1) / pageSize;
 			if (page > 0)
 			{
 				response.Link.Add(new Http.Header.Link(this.Locator + KeyValue.Create("page", "0")) { Relatation = Http.Header.LinkRelation.First });
@@ -77,7 +77,7 @@ namespace Aser.Rest
 					response.Link.Add(new Http.Header.Link(this.Locator + KeyValue.Create("page", (page + 1).AsString())) { Relatation = Http.Header.LinkRelation.Next });
 				response.Link.Add(new Http.Header.Link(this.Locator + KeyValue.Create("page", last.AsString())) { Relatation = Http.Header.LinkRelation.Last });
 			}
-			Generic.IEnumerable<ResourceHandler<T>> content = this.Get(pageSize, page * pageSize);
+			Generic.IEnumerable<ResourceHandler<R>> content = this.Get(pageSize, page * pageSize);
 			bool result;
 			if (result = content.NotNull())
 			{
@@ -96,34 +96,34 @@ namespace Aser.Rest
 				response.Status = Http.Status.MethodNotAllowed;
 			return result;
 		}
-		protected virtual Generic.IEnumerable<ResourceHandler<T>> Get(int limit, int offset)
+		protected virtual Generic.IEnumerable<ResourceHandler<R>> Get(int limit, int offset)
 		{
-			return null;
+			return this.Data.Open(limit, offset).Map(this.Map);
 		}
 		#endregion
 		#region Post
 		protected override bool Post(Http.Request request, Http.Response response)
 		{
-			bool result;
-			T @new = request.Receive<T>();
-			if (result = @new.NotNull())
+			bool result = false;
+			R @new = request.Receive<R>();
+			if (@new.IsNull())
+				response.Status = Http.Status.BadRequest;
+			else if (this.Post(@new))
 			{
-				ResourceHandler<T> data = this.Post(@new);
-				if (result = data.NotNull())
-				{
-					response.Status = Http.Status.Created;
-					if (!(result = response.Send(data.Serialize())))
-						response.Status = Http.Status.InternalServerError;
-				}
-				else
-					response.Status = Http.Status.MethodNotAllowed;
+				response.Status = Http.Status.Created;
+				if (!(result = response.Send(this.Map(@new).Serialize())))
+					response.Status = Http.Status.InternalServerError;
 			}
+			else
+				response.Status = Http.Status.InternalServerError;
 			return result;
 		}
-		protected virtual ResourceHandler<T> Post(T item)
+		protected virtual bool Post(R item)
 		{
-			return null;
+			return this.Data.Create(item) > 0;
 		}
+		#endregion
+		#region Static Open
 		#endregion
 	}
 }

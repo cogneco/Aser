@@ -1,5 +1,5 @@
 //
-//  Item.cs
+//  IItem.cs
 //
 //  Author:
 //       Simon Mika <smika@hx.se>
@@ -19,27 +19,14 @@
 //  You should have received a copy of the GNU Lesser General Public License
 //  along with this program.  If not, see <http://www.gnu.org/licenses/>.
 using System;
-using Kean;
-using Kean.Extension;
-using Collection = Kean.Collection;
-using Kean.Collection.Extension;
-using Uri = Kean.Uri;
-using Generic = System.Collections.Generic;
-using Integer = Kean.Math.Integer;
-using Serialize = Kean.Serialize;
-namespace Aser.Test.Front
+
+namespace Aser.Rest
 {
-	public class Item :
-	Rest.ResourceHandler<Back.Item>
+	public interface IResource
 	{
-		Item(Items parent, Back.Item backend) :
-			base(parent.Locator + backend.Key.AsString(), backend)
-		{
-		}
-		public static Item Create(Items parent, Back.Item backend)
-		{
-			return parent.NotNull() && backend.NotNull() ? new Item(parent, backend) : null;
-		}
+		long Key { get; }
+		bool Save();
+		bool Remove();
 	}
 }
 
