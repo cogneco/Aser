@@ -41,10 +41,6 @@ namespace Aser.Rest
 		{
 			this.Data = data;
 		}
-		public override Serialize.Data.Node Serialize()
-		{
-			return null;
-		}
 		protected abstract ResourceHandler<R> Map(R resource);
 		#region Route
 		protected virtual ResourceHandler<R> Route(string identifier)
@@ -66,15 +62,15 @@ namespace Aser.Rest
 			int last = (this.Data.Count - 1) / pageSize;
 			if (page > 0)
 			{
-				response.Link.Add(new Http.Header.Link(this.Locator + KeyValue.Create("page", "0")) { Relatation = Http.Header.LinkRelation.First });
+				response.Link.Add(new Http.Header.Link(this.Url + KeyValue.Create("page", "0")) { Relatation = Http.Header.LinkRelation.First });
 				if (page <= last)
-					response.Link.Add(new Http.Header.Link(this.Locator + KeyValue.Create("page", (page - 1).AsString())) { Relatation = Http.Header.LinkRelation.Prev });
+					response.Link.Add(new Http.Header.Link(this.Url + KeyValue.Create("page", (page - 1).AsString())) { Relatation = Http.Header.LinkRelation.Prev });
 			}
 			if (page != last)
 			{
 				if (page < last)
-					response.Link.Add(new Http.Header.Link(this.Locator + KeyValue.Create("page", (page + 1).AsString())) { Relatation = Http.Header.LinkRelation.Next });
-				response.Link.Add(new Http.Header.Link(this.Locator + KeyValue.Create("page", last.AsString())) { Relatation = Http.Header.LinkRelation.Last });
+					response.Link.Add(new Http.Header.Link(this.Url + KeyValue.Create("page", (page + 1).AsString())) { Relatation = Http.Header.LinkRelation.Next });
+				response.Link.Add(new Http.Header.Link(this.Url + KeyValue.Create("page", last.AsString())) { Relatation = Http.Header.LinkRelation.Last });
 			}
 			Generic.IEnumerable<ResourceHandler<R>> content = this.Get(pageSize, page * pageSize);
 			bool result;
@@ -83,7 +79,7 @@ namespace Aser.Rest
 				response.Status = Http.Status.OK;
 				try
 				{
-					if (!(result = response.Send((Serialize.Data.Node)new Serialize.Data.Collection(content.Map(item => item.Serialize())))))
+					if (!(result = response.Send(content)))
 						response.Status = Http.Status.InternalServerError;
 				}
 				catch (Exception ex)
@@ -104,17 +100,17 @@ namespace Aser.Rest
 		protected override bool Post(Http.Request request, Http.Response response)
 		{
 			bool result = false;
-			R @new = request.Receive<R>();
-			if (@new.IsNull())
-				response.Status = Http.Status.BadRequest;
-			else if (this.Post(@new))
-			{
-				response.Status = Http.Status.Created;
-				if (!(result = response.Send(this.Map(@new).Serialize())))
-					response.Status = Http.Status.InternalServerError;
-			}
-			else
-				response.Status = Http.Status.InternalServerError;
+//			request.Receive();
+//			if (@new.IsNull())
+//				response.Status = Http.Status.BadRequest;
+//			else if (this.Post(@new))
+//			{
+//				response.Status = Http.Status.Created;
+//				if (!(result = response.Send(this.Map(@new).Serialize())))
+//					response.Status = Http.Status.InternalServerError;
+//			}
+//			else
+//				response.Status = Http.Status.InternalServerError;
 			return result;
 		}
 		protected virtual bool Post(R item)

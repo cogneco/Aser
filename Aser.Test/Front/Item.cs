@@ -33,7 +33,7 @@ namespace Aser.Test.Front
 	Rest.ResourceHandler<Back.Item>
 	{
 		Item(Items parent, Back.Item backend) :
-			base(parent.Locator + backend.Key.AsString(), backend)
+			base(parent.Url + backend.Key.AsString(), backend)
 		{
 		}
 		public static Item Create(Items parent, Back.Item backend)

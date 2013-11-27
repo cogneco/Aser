@@ -114,14 +114,14 @@ namespace Aser.Http
 			this.backend = backend;
 		}
 		#endregion
-		#region Send
+		#region Receive
 		public T Receive<T>()
 		{
 			return this.Storage.Load<T>(this.Device);
 		}
-		public Serialize.Data.Node Receive()
+		public bool Receive<T>(T result)
 		{
-			return this.Storage.Load(this.Device);
+			return this.Storage.LoadInto(result, this.Device);
 		}
 		#endregion
 	}

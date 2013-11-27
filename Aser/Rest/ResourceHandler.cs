@@ -40,39 +40,18 @@ namespace Aser.Rest
 		{
 			this.Data = data;
 		}
-		public override Serialize.Data.Node Serialize()
-		{
-			Serialize.Data.Node result = Kean.Serialize.Storer.Store<R>(this.Data);
-			if (result is Serialize.Data.Branch)
-				(result as Serialize.Data.Branch).Nodes.Add(new Serialize.Data.String(this.Locator).UpdateName("url"));
-			return result;
-		}
 		#region Get
 		protected override bool Get(Http.Request request, Http.Response response)
 		{
-			Serialize.Data.Node node = this.Get();
-			return (response.Status = node.NotNull() && response.Send(node) ? Http.Status.OK : Http.Status.NotImplemented).Success;
-		}
-		protected virtual Serialize.Data.Node Get()
-		{
-			return this.Serialize();
+			return (response.Status = response.Send(this) ? Http.Status.OK : Http.Status.InternalServerError).Success;
 		}
 		#endregion
 		#region Put
 		protected override bool Put(Http.Request request, Http.Response response)
 		{
-			Http.Status result;
-			R @new = request.Receive<R>();
-			return (response.Status = @new.IsNull() ? 
-				Http.Status.BadRequest : 
-				(result = this.Put(@new)).Success && response.Send(this.Serialize()) ? 
-				result : 
-				Http.Status.InternalServerError
-			).Success;
-		}
-		protected virtual Http.Status Put(R @new)
-		{
-			return @new.IsNull() ? Http.Status.BadRequest : (this.Data = @new).Save() ? Http.Status.OK : Http.Status.InternalServerError;
+			return (response.Status = !request.Receive(this) ? Http.Status.BadRequest : 
+				!this.Data.Save() ? Http.Status.InternalServerError :
+				Http.Status.OK).Success && response.Send(this);
 		}
 		#endregion
 		#region Delete
@@ -80,7 +59,7 @@ namespace Aser.Rest
 		{
 			bool result;
 			if (result = (response.Status = this.Delete()).Success)
-				response.Send(this.Serialize());
+				response.Send(this);
 			return result;
 		}
 		protected virtual Http.Status Delete()

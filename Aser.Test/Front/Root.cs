@@ -30,15 +30,11 @@ namespace Aser.Test.Front
 	public class Root :
 	Rest.Handler
 	{
-		Items items;
+		[Serialize.Parameter]
+		public Uri.Locator ItemsUrl { get { return this.Url + "items"; } }
 		Root(Uri.Locator resource) :
 			base(resource)
 		{
-			this.items = Items.Create(resource + "items");
-		}
-		public override Serialize.Data.Node Serialize()
-		{
-			return new Serialize.Data.Branch(new Serialize.Data.String(this.Locator + "items").UpdateName("itemsUrl"));
 		}
 		protected override Tuple<Rest.Handler, Rest.Path> Route(Rest.Path path)
 		{
@@ -46,7 +42,7 @@ namespace Aser.Test.Front
 			switch (path.Head)
 			{
 				case "items":
-					result = this.items;
+					result = Items.Create(this.Url + "items");
 					path = path.Tail;
 					break;
 				default:

@@ -26,6 +26,7 @@ using Serialize = Kean.Serialize;
 using Json = Kean.Json;
 using Xml = Kean.Xml;
 using Uri = Kean.Uri;
+using Kean.Collection.Extension;
 
 namespace Aser.Http
 {
@@ -51,10 +52,10 @@ namespace Aser.Http
 					switch (this.ContentType)
 					{
 						case "application/json":
-							this.storage = new Json.Serialize.Storage();
+							this.storage = new Json.Serialize.Storage() { NoTypes = true };
 							break;
 						case "application/xml":
-							this.storage = new Xml.Serialize.Storage();
+							this.storage = new Xml.Serialize.Storage() { NoTypes = true };
 							break;
 					}
 				return this.storage;
@@ -95,10 +96,6 @@ namespace Aser.Http
 		}
 		#region Send
 		public bool Send<T>(T value)
-		{
-			return this.Storage.Store<T>(value, this.Device);
-		}
-		public bool Send(Serialize.Data.Node value)
 		{
 			return this.Storage.Store(value, this.Device);
 		}

@@ -31,16 +31,16 @@ namespace Aser.Rest
 {
 	public abstract class Handler
 	{
-		public Uri.Locator Locator { get; private set; }
-		protected Handler(Uri.Locator locator)
+		[Serialize.Parameter]
+		public Uri.Locator Url { get; private set; }
+		protected Handler(Uri.Locator url)
 		{
-			this.Locator = locator;
+			this.Url = url;
 		}
 		protected virtual Tuple<Rest.Handler, Rest.Path> Route(Rest.Path path)
 		{
 			return null;
 		}
-		public abstract Serialize.Data.Node Serialize();
 		#region Process
 		public void Process(Path path, Http.Request request, Http.Response response)
 		{
@@ -91,15 +91,9 @@ namespace Aser.Rest
 		protected virtual bool Get(Http.Request request, Http.Response response)
 		{
 			bool result;
-			Serialize.Data.Node content = this.Serialize();
-			if (result = content.NotNull())
-			{
-				response.Status = Http.Status.OK;
-				if (!(result = response.Send(content)))
-					response.Status = Http.Status.InternalServerError;
-			}
-			else
-				response.Status = Http.Status.MethodNotAllowed;
+			response.Status = Http.Status.OK;
+			if (!(result = response.Send(this)))
+				response.Status = Http.Status.InternalServerError;
 			return result;
 		}
 		#endregion
