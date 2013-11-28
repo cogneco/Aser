@@ -30,7 +30,7 @@ namespace Aser.Test
 		static void Run()
 		{
 			var root = Front.Root.Create("http://localhost:8080");
-			Http.Server.Create((request, response) => root.Process(request.Locator.Path, request, response)).Run(":8080");
+			Http.Server.Create(root.Process).Run(":8080");
 		}
 	}
 }

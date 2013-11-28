@@ -32,24 +32,13 @@ namespace Aser.Test.Front
 	{
 		[Serialize.Parameter]
 		public Uri.Locator ItemsUrl { get { return this.Url + "items"; } }
+		public override Aser.Rest.Handler this [string head]
+		{ 
+			get { return head == "items" ? Items.Create(this.Url + "items") : base[head]; }
+		}
 		Root(Uri.Locator resource) :
 			base(resource)
 		{
-		}
-		protected override Tuple<Rest.Handler, Rest.Path> Route(Rest.Path path)
-		{
-			Rest.Handler result;
-			switch (path.Head)
-			{
-				case "items":
-					result = Items.Create(this.Url + "items");
-					path = path.Tail;
-					break;
-				default:
-					result = null;
-					break;
-			}
-			return result.IsNull() ? null : Tuple.Create(result, path);
 		}
 		public static Root Create(Uri.Locator resource)
 		{

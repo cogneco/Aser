@@ -40,27 +40,25 @@ namespace Aser.Rest
 		{
 			this.Data = data;
 		}
-		#region Get
-		protected override bool Get(Http.Request request, Http.Response response)
-		{
-			return (response.Status = response.Send(this) ? Http.Status.OK : Http.Status.InternalServerError).Success;
-		}
-		#endregion
 		#region Put
-		protected override bool Put(Http.Request request, Http.Response response)
+		protected override void Put(Http.Request request, Http.Response response)
 		{
-			return (response.Status = !request.Receive(this) ? Http.Status.BadRequest : 
-				!this.Data.Save() ? Http.Status.InternalServerError :
-				Http.Status.OK).Success && response.Send(this);
+			if (!request.Receive(this))
+				response.Status = Http.Status.BadRequest;
+			else if (!this.Data.Save())
+				response.Status = Http.Status.InternalServerError;
+			else
+			{
+				response.Status = Http.Status.OK;
+				response.Send(this);
+			}
 		}
 		#endregion
 		#region Delete
-		protected override bool Delete(Http.Request request, Http.Response response)
+		protected override void Delete(Http.Request request, Http.Response response)
 		{
-			bool result;
-			if (result = (response.Status = this.Delete()).Success)
+			if ((response.Status = this.Delete()).Success)
 				response.Send(this);
-			return result;
 		}
 		protected virtual Http.Status Delete()
 		{

@@ -18,6 +18,7 @@
 //
 //  You should have received a copy of the GNU Lesser General Public License
 //  along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
 using System;
 using Uri = Kean.Uri;
 using Serialize = Kean.Serialize;
@@ -35,27 +36,23 @@ namespace Aser.Rest
 		where R : IResource, new()
 	{
 		protected C Data { get; private set; }
-		protected int DefaultPageSize { get { return 30; } }
+		protected virtual int DefaultPageSize { get { return 30; } }
+		public override Handler this [string head]
+		{
+			get
+			{
+				long key;
+				return head.NotEmpty() && long.TryParse(head, out key) ? this.Map(this.Data.Open(key)) : base[head];
+			}
+		}
 		protected CollectionHandler(Uri.Locator locator, C data) :
 			base(locator)
 		{
 			this.Data = data;
 		}
 		protected abstract ResourceHandler<R> Map(R resource);
-		#region Route
-		protected virtual ResourceHandler<R> Route(string identifier)
-		{
-			long key;
-			return long.TryParse(identifier, out key) ? this.Map(this.Data.Open(key)) : null;
-		}
-		protected override Tuple<Handler, Path> Route(Path path)
-		{
-			Handler result = this.Route(path.Head);
-			return result.NotNull() ? Tuple.Create(result, path.Tail) : base.Route(path);
-		}
-		#endregion
 		#region Get
-		protected override bool Get(Aser.Http.Request request, Aser.Http.Response response)
+		protected override void Get(Http.Request request, Http.Response response)
 		{
 			int pageSize = request.Locator.Query.Get("pageSize", this.DefaultPageSize);
 			int page = request.Locator.Query.Get("page", 0);
@@ -73,23 +70,13 @@ namespace Aser.Rest
 				response.Link.Add(new Http.Header.Link(this.Url + KeyValue.Create("page", last.AsString())) { Relatation = Http.Header.LinkRelation.Last });
 			}
 			Generic.IEnumerable<ResourceHandler<R>> content = this.Get(pageSize, page * pageSize);
-			bool result;
-			if (result = content.NotNull())
+			if (content.NotNull())
 			{
 				response.Status = Http.Status.OK;
-				try
-				{
-					if (!(result = response.Send(content)))
-						response.Status = Http.Status.InternalServerError;
-				}
-				catch (Exception ex)
-				{
-					Console.WriteLine(ex);
-				}
+				response.Send(content);
 			}
 			else
 				response.Status = Http.Status.MethodNotAllowed;
-			return result;
 		}
 		protected virtual Generic.IEnumerable<ResourceHandler<R>> Get(int limit, int offset)
 		{
@@ -97,28 +84,24 @@ namespace Aser.Rest
 		}
 		#endregion
 		#region Post
-		protected override bool Post(Http.Request request, Http.Response response)
+		protected override void Post(Http.Request request, Http.Response response)
 		{
-			bool result = false;
 //			request.Receive();
 //			if (@new.IsNull())
 //				response.Status = Http.Status.BadRequest;
 //			else if (this.Post(@new))
 //			{
 //				response.Status = Http.Status.Created;
-//				if (!(result = response.Send(this.Map(@new).Serialize())))
+//				if (!response.Send(this.Map(@new).Serialize()))
 //					response.Status = Http.Status.InternalServerError;
 //			}
 //			else
 //				response.Status = Http.Status.InternalServerError;
-			return result;
 		}
 		protected virtual bool Post(R item)
 		{
 			return this.Data.Create(item) > 0;
 		}
-		#endregion
-		#region Static Open
 		#endregion
 	}
 }

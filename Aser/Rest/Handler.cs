@@ -33,96 +33,83 @@ namespace Aser.Rest
 	{
 		[Serialize.Parameter]
 		public Uri.Locator Url { get; private set; }
+		public virtual Action<Http.Request, Http.Response> this [Path path]
+		{
+			get
+			{ 
+				Handler handler;
+				return path.IsNull() ? this.Route :
+					(handler = this[path.Head]).NotNull() ? handler[path.Tail] : 
+					(request, response) => response.Status = Http.Status.NotFound;
+			} 
+		}
+		public virtual Handler this [string head] { get { return null; } }
 		protected Handler(Uri.Locator url)
 		{
 			this.Url = url;
 		}
-		protected virtual Tuple<Rest.Handler, Rest.Path> Route(Rest.Path path)
-		{
-			return null;
-		}
 		#region Process
-		public void Process(Path path, Http.Request request, Http.Response response)
+		public void Process(Http.Request request, Http.Response response)
 		{
-			Tuple<Rest.Handler, Rest.Path> next = null;
-			if (path.NotNull() && path.Head.NotEmpty())
-			{
-				next = this.Route(path);
-				if (next.NotNull() && next.Item1.NotNull())
-					next.Item1.Process(next.Item2, request, response);
-				else
-					response.Status = Http.Status.NotFound;
-			}
-			else
-				this.Process(request, response);
+			this[(Path)request.Locator.Path](request, response);
+			response.End();
 		}
-		bool Process(Http.Request request, Http.Response response)
+		protected virtual void Route(Http.Request request, Http.Response response)
 		{
 			response.ContentType = "application/json";
-			bool result;
 			switch (request.Method)
 			{
 				case Http.Method.Get:
-					result = this.Get(request, response);
+					this.Get(request, response);
 					break;
 				case Http.Method.Put:
-					result = this.Put(request, response);
+					this.Put(request, response);
 					break;
 				case Http.Method.Patch:
-					result = this.Patch(request, response);
+					this.Patch(request, response);
 					break;
 				case Http.Method.Post:
-					result = this.Post(request, response);
+					this.Post(request, response);
 					break;
 				case Http.Method.Delete:
-					result = this.Delete(request, response);
+					this.Delete(request, response);
 					break;
 				default:
-					result = false;
 					response.Status = Http.Status.NotImplemented;
 					break;
 			}
-			response.End();
-			return result;
 		}
 		#endregion
 		#region Get, Put, Post, Delete of this resource
 		#region Get
-		protected virtual bool Get(Http.Request request, Http.Response response)
+		protected virtual void Get(Http.Request request, Http.Response response)
 		{
-			bool result;
 			response.Status = Http.Status.OK;
-			if (!(result = response.Send(this)))
-				response.Status = Http.Status.InternalServerError;
-			return result;
+			response.Send(this);
 		}
 		#endregion
 		#region Put
-		protected virtual bool Put(Http.Request request, Http.Response response)
+		protected virtual void Put(Http.Request request, Http.Response response)
 		{
 			response.Status = Http.Status.MethodNotAllowed;
-			return false;
 		}
 		#endregion
 		#region Patch
-		protected virtual bool Patch(Http.Request request, Http.Response response)
+		protected virtual void Patch(Http.Request request, Http.Response response)
 		{
 			response.Status = Http.Status.MethodNotAllowed;
-			return false;
 		}
 		#endregion
 		#region Post
-		protected virtual bool Post(Http.Request request, Http.Response response)
+		protected virtual void Post(Http.Request request, Http.Response response)
 		{
 			response.Status = Http.Status.MethodNotAllowed;
-			return false;
 		}
 		#endregion
 		#region Delete
-		protected virtual bool Delete(Http.Request request, Http.Response response)
+		protected virtual void Delete(Http.Request request, Http.Response response)
 		{
 			response.Status = Http.Status.MethodNotAllowed;
-			return false;
 		}
 		#endregion
 		#endregion

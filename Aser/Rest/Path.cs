@@ -22,6 +22,7 @@ using System;
 using Uri = Kean.Uri;
 using Kean;
 using Kean.Extension;
+
 namespace Aser.Rest
 {
 	public class Path :
@@ -32,9 +33,7 @@ namespace Aser.Rest
 		Path()
 		{
 		}
-
 		#region Object Overrides
-
 		public override int GetHashCode()
 		{
 			return this.Head.Hash() ^ this.Tail.Hash();
@@ -47,20 +46,14 @@ namespace Aser.Rest
 		{
 			return this.Tail.NotNull() ? this.Head + "/" + this.Tail.ToString() : this.Head;
 		}
-
 		#endregion
-
 		#region IEquatable implementation
-
 		bool IEquatable<Path>.Equals(Path other)
 		{
 			return other.NotNull() && this.Head == other.Head && this.Tail.SameOrEquals(other.Tail);
 		}
-
 		#endregion
-
 		#region Comparison Operators
-
 		public static bool operator ==(Path left, Path right)
 		{
 			return left.SameOrEquals(right);
@@ -69,16 +62,17 @@ namespace Aser.Rest
 		{
 			return !left.SameOrEquals(right);
 		}
-
 		#endregion
-
 		public static implicit operator Path(Uri.Path path)
 		{
-			return Path.Build(path.Last, null);
+			Path result = Path.Build(path.Last, null);
+			Console.WriteLine("path: " + result);
+			return result;
 		}
 		static Path Build(Uri.PathLink current, Path tail)
 		{
-			return current.NotNull() ? Path.Build(current.Tail, new Path() { Head = current.Head, Tail = tail }) : tail;
+			Path result = current.NotNull() ? Path.Build(current.Tail, current.Head.NotEmpty() ? new Path() { Head = current.Head, Tail = tail } : tail) : tail;
+			return result;
 		}
 	}
 }
