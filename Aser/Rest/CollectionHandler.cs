@@ -35,20 +35,30 @@ namespace Aser.Rest
 		where C : ICollection<R>
 		where R : IResource, new()
 	{
-		protected C Data { get; private set; }
+		Func<C> loadCollection;
+		C collection;
+		protected C Collection
+		{
+			get
+			{
+				if (this.collection.IsNull() && this.loadCollection.NotNull())
+					this.collection = this.loadCollection();
+				return this.collection;
+			}
+		}
 		protected virtual int DefaultPageSize { get { return 30; } }
 		public override Handler this [string head]
 		{
 			get
 			{
 				long key;
-				return head.NotEmpty() && long.TryParse(head, out key) ? this.Map(this.Data.Open(key)) : base[head];
+				return head.NotEmpty() && long.TryParse(head, out key) ? this.Map(this.Collection.Open(key)) : base[head];
 			}
 		}
-		protected CollectionHandler(Uri.Locator locator, C data) :
+		protected CollectionHandler(Uri.Locator locator, Func<C> loadCollection) :
 			base(locator)
 		{
-			this.Data = data;
+			this.loadCollection = loadCollection;
 		}
 		protected abstract ResourceHandler<R> Map(R resource);
 		#region Get
@@ -56,7 +66,7 @@ namespace Aser.Rest
 		{
 			int pageSize = request.Locator.Query.Get("pageSize", this.DefaultPageSize);
 			int page = request.Locator.Query.Get("page", 0);
-			int last = (this.Data.Count - 1) / pageSize;
+			int last = (this.Collection.Count - 1) / pageSize;
 			if (page > 0)
 			{
 				response.Link.Add(new Http.Header.Link(this.Url + KeyValue.Create("page", "0")) { Relatation = Http.Header.LinkRelation.First });
@@ -80,7 +90,7 @@ namespace Aser.Rest
 		}
 		protected virtual Generic.IEnumerable<ResourceHandler<R>> Get(int limit, int offset)
 		{
-			return this.Data.Open(limit, offset).Map(this.Map);
+			return this.Collection.Open(limit, offset).Map(this.Map);
 		}
 		#endregion
 		#region Post
@@ -100,7 +110,7 @@ namespace Aser.Rest
 		}
 		protected virtual bool Post(R item)
 		{
-			return this.Data.Create(item) > 0;
+			return this.Collection.Create(item) > 0;
 		}
 		#endregion
 	}

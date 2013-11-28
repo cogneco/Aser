@@ -33,12 +33,22 @@ namespace Aser.Rest
     Handler
 		where R : IResource, new()
 	{
-		protected R Data { get; private set; }
+		Func<R> loadData;
+		R data;
+		protected R Data
+		{
+			get
+			{
+				if (this.data.IsNull() && this.loadData.NotNull())
+					this.data = this.loadData();
+				return this.data;
+			}
+		}
 		public long Key { get { return this.Data.Key; } }
-		protected ResourceHandler(Uri.Locator locator, R data) :
+		protected ResourceHandler(Uri.Locator locator, Func<R> loadData) :
 			base(locator)
 		{
-			this.Data = data;
+			this.loadData = loadData;
 		}
 		#region Put
 		protected override void Put(Http.Request request, Http.Response response)

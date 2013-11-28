@@ -32,13 +32,9 @@ namespace Aser.Test.Front
 	public class Item :
 	Rest.ResourceHandler<Back.Item>
 	{
-		Item(Items parent, Back.Item backend) :
-			base(parent.Url + backend.Key.AsString(), backend)
+		public Item(Items parent, long key, Func<Back.Item> loadData) :
+			base(parent.Url + key.AsString(), loadData)
 		{
-		}
-		public static Item Create(Items parent, Back.Item backend)
-		{
-			return parent.NotNull() && backend.NotNull() ? new Item(parent, backend) : null;
 		}
 	}
 }

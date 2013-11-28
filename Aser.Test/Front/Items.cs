@@ -33,12 +33,12 @@ namespace Aser.Test.Front
 	Rest.CollectionHandler<Back.Items, Back.Item>
 	{
 		Items(Uri.Locator locator, params Back.Item[] data) :
-			base(locator, new Back.Items(data))
+			base(locator, () => new Back.Items(data))
 		{
 		}
 		protected override Rest.ResourceHandler<Back.Item> Map(Back.Item resource)
 		{
-			return Item.Create(this, resource);
+			return new Item(this, resource.Key, () => resource);
 		}
 		public static Items Create(Uri.Locator locator)
 		{
