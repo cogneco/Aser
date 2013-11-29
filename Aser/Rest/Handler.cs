@@ -31,8 +31,13 @@ namespace Aser.Rest
 {
 	public abstract class Handler
 	{
+		Func<Uri.Locator> getUrl;
+		Uri.Locator url;
 		[Serialize.Parameter]
-		public Uri.Locator Url { get; private set; }
+		public Uri.Locator Url
+		{
+			get { return this.url ?? (this.getUrl.NotNull() ? (this.url = this.getUrl()) : null); } 
+		}
 		public virtual Action<Http.Request, Http.Response> this [Path path]
 		{
 			get
@@ -43,10 +48,15 @@ namespace Aser.Rest
 					(request, response) => response.Status = Http.Status.NotFound;
 			} 
 		}
+		public abstract bool Exists { get; }
 		public virtual Handler this [string head] { get { return null; } }
+		protected Handler(Func<Uri.Locator> getUrl)
+		{
+			this.getUrl = getUrl;
+		}
 		protected Handler(Uri.Locator url)
 		{
-			this.Url = url;
+			this.url = url;
 		}
 		#region Process
 		public void Process(Http.Request request, Http.Response response)
@@ -84,8 +94,13 @@ namespace Aser.Rest
 		#region Get
 		protected virtual void Get(Http.Request request, Http.Response response)
 		{
-			response.Status = Http.Status.OK;
-			response.Send(this);
+			if (this.Exists)
+			{
+				response.Status = Http.Status.OK;
+				response.Send(this);
+			}
+			else
+				response.Status = Http.Status.NotFound;
 		}
 		#endregion
 		#region Put

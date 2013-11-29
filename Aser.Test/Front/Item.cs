@@ -33,9 +33,8 @@ namespace Aser.Test.Front
 	Rest.ResourceHandler<Back.Item>
 	{
 		public Item(Items parent, long key, Func<Back.Item> loadData) :
-			base(parent.Url + key.AsString(), loadData)
+			base(() => parent.Url + key.AsString(), loadData)
 		{
 		}
 	}
 }
-

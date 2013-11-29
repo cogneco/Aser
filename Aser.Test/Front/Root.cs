@@ -30,6 +30,7 @@ namespace Aser.Test.Front
 	public class Root :
 	Rest.Handler
 	{
+		public override bool Exists { get { return true; } }
 		[Serialize.Parameter]
 		public Uri.Locator ItemsUrl { get { return this.Url + "items"; } }
 		public override Aser.Rest.Handler this [string head]

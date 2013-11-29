@@ -31,31 +31,32 @@ namespace Aser.Rest
 {
 	public abstract class ResourceHandler<R> :
     Handler
-		where R : IResource, new()
+		where R : class, IResource, new()
 	{
-		Func<R> loadData;
-		R data;
-		protected R Data
+		Func<R> loadResource;
+		R resource;
+		internal protected R Resource
 		{
-			get
-			{
-				if (this.data.IsNull() && this.loadData.NotNull())
-					this.data = this.loadData();
-				return this.data;
-			}
+			get { return this.resource ?? (this.loadResource.NotNull() ? (this.resource = this.loadResource()) : null); } 
 		}
-		public long Key { get { return this.Data.Key; } }
-		protected ResourceHandler(Uri.Locator locator, Func<R> loadData) :
-			base(locator)
+		public override bool Exists { get { return this.Resource.NotNull(); } }
+		public long Key { get { return this.Resource.Key; } }
+		protected ResourceHandler(Func<Uri.Locator> getUrl, Func<R> loadResource) :
+			base(getUrl)
 		{
-			this.loadData = loadData;
+			this.loadResource = loadResource;
+		}
+		protected ResourceHandler(Func<Uri.Locator> getUrl, R resource) :
+			base(getUrl)
+		{
+			this.resource = resource;
 		}
 		#region Put
 		protected override void Put(Http.Request request, Http.Response response)
 		{
 			if (!request.Receive(this))
 				response.Status = Http.Status.BadRequest;
-			else if (!this.Data.Save())
+			else if (!this.Resource.Save())
 				response.Status = Http.Status.InternalServerError;
 			else
 			{
@@ -72,7 +73,9 @@ namespace Aser.Rest
 		}
 		protected virtual Http.Status Delete()
 		{
-			return this.Data.Remove() ? Http.Status.OK : Http.Status.InternalServerError;
+			return this.Resource.IsNull() ? Http.Status.NotFound :
+				 this.Resource.Remove() ? Http.Status.OK : 
+				Http.Status.InternalServerError;
 		}
 		#endregion
 	}

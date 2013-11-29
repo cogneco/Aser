@@ -22,6 +22,7 @@ using System;
 using Kean;
 using Kean.Extension;
 using Uri = Kean.Uri;
+using Error = Kean.Error;
 using Owin;
 using Tasks = System.Threading.Tasks.Task;
 
@@ -49,17 +50,8 @@ namespace Aser.Http
 				Port = (int?)endpoint.Port ?? 8080,
 			};
 			this.backend = Microsoft.Owin.Hosting.WebApp.Start(options, applicationBuilder => 
-				applicationBuilder.UseHandler((request, response) =>
-			{
-				try
-				{
-					this.process(new Request(request), new Response(response));
-				}
-				catch (Exception ex)
-				{
-					Console.WriteLine(ex);
-				}
-			}));
+				applicationBuilder.UseHandler((request, response) => Error.Log.Call(this.process, new Request(request), new Response(response)))
+			);
 			return this;
 		}
 		public bool Run(Uri.Endpoint endpoint)

@@ -32,20 +32,16 @@ namespace Aser.Rest
 {
 	public abstract class CollectionHandler<C, R> :
 	Handler
-		where C : ICollection<R>
-		where R : IResource, new()
+		where C : class, ICollection<R>
+		where R : class, IResource, new()
 	{
 		Func<C> loadCollection;
 		C collection;
 		protected C Collection
 		{
-			get
-			{
-				if (this.collection.IsNull() && this.loadCollection.NotNull())
-					this.collection = this.loadCollection();
-				return this.collection;
-			}
+			get { return this.collection ?? (this.loadCollection.NotNull() ? (this.collection = this.loadCollection()) : null); } 
 		}
+		public override bool Exists { get { return this.Collection.NotNull(); } }
 		protected virtual int DefaultPageSize { get { return 30; } }
 		public override Handler this [string head]
 		{
@@ -55,10 +51,15 @@ namespace Aser.Rest
 				return head.NotEmpty() && long.TryParse(head, out key) ? this.Map(this.Collection.Open(key)) : base[head];
 			}
 		}
-		protected CollectionHandler(Uri.Locator locator, Func<C> loadCollection) :
-			base(locator)
+		protected CollectionHandler(Func<Uri.Locator> getUrl, Func<C> loadCollection) :
+			base(getUrl)
 		{
 			this.loadCollection = loadCollection;
+		}
+		protected CollectionHandler(Uri.Locator url, C collection) :
+			base(url)
+		{
+			this.collection = collection;
 		}
 		protected abstract ResourceHandler<R> Map(R resource);
 		#region Get
@@ -96,17 +97,16 @@ namespace Aser.Rest
 		#region Post
 		protected override void Post(Http.Request request, Http.Response response)
 		{
-//			request.Receive();
-//			if (@new.IsNull())
-//				response.Status = Http.Status.BadRequest;
-//			else if (this.Post(@new))
-//			{
-//				response.Status = Http.Status.Created;
-//				if (!response.Send(this.Map(@new).Serialize()))
-//					response.Status = Http.Status.InternalServerError;
-//			}
-//			else
-//				response.Status = Http.Status.InternalServerError;
+			ResourceHandler<R> result = this.Map(new R());
+			if (!request.Receive(result))
+				response.Status = Http.Status.BadRequest;
+			else if (!this.Post(result.Resource))
+				response.Status = Http.Status.InternalServerError;
+			else
+			{
+				response.Status = Http.Status.Created;
+				response.Send(result);
+			}
 		}
 		protected virtual bool Post(R item)
 		{
