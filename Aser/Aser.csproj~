@@ -9,6 +9,7 @@
     <OutputType>Library</OutputType>
     <RootNamespace>Aser</RootNamespace>
     <AssemblyName>Aser</AssemblyName>
+    <SolutionDir Condition="$(SolutionDir) == '' Or $(SolutionDir) == '*Undefined*'">.\</SolutionDir>
     <RestorePackages>true</RestorePackages>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
@@ -84,7 +85,7 @@
   <ItemGroup>
     <None Include="packages.config" />
   </ItemGroup>
-  <Import Project=".\..\.nuget\NuGet.targets" Condition="Exists('.\..\.nuget\NuGet.targets')" />
+  <Import Project="$(SolutionDir)\.nuget\NuGet.targets" Condition="Exists('$(SolutionDir)\.nuget\NuGet.targets')" />
   <ItemGroup>
     <ProjectReference Include="..\..\Kean\Kean\Kean.csproj">
       <Project>{DB8ACBAC-64DF-439B-BFCD-564D51661CE2}</Project>
