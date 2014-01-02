@@ -61,9 +61,9 @@ namespace Aser.Rest
 		{
 			this.collection = collection;
 		}
-		protected abstract ResourceHandler<R> Map(R resource);
+		protected abstract ResourceHandler<R> Map (R resource);
 		#region Get
-		protected override void Get(Http.Request request, Http.Response response)
+		protected override void Get (Http.Request request, Http.Response response)
 		{
 			int pageSize = request.Locator.Query.Get("pageSize", this.DefaultPageSize);
 			int page = request.Locator.Query.Get("page", 0);
@@ -80,7 +80,7 @@ namespace Aser.Rest
 					response.Link.Add(new Http.Header.Link(this.Url + KeyValue.Create("page", (page + 1).AsString())) { Relatation = Http.Header.LinkRelation.Next });
 				response.Link.Add(new Http.Header.Link(this.Url + KeyValue.Create("page", last.AsString())) { Relatation = Http.Header.LinkRelation.Last });
 			}
-			Generic.IEnumerable<ResourceHandler<R>> content = this.Get(pageSize, page * pageSize);
+			Generic.IEnumerable<ResourceHandler<R>> content = this.Get(pageSize, page * pageSize).Where(r => r.Readable);
 			if (content.NotNull())
 			{
 				response.Status = Http.Status.OK;
@@ -89,26 +89,31 @@ namespace Aser.Rest
 			else
 				response.Status = Http.Status.MethodNotAllowed;
 		}
-		protected virtual Generic.IEnumerable<ResourceHandler<R>> Get(int limit, int offset)
+		protected virtual Generic.IEnumerable<ResourceHandler<R>> Get (int limit, int offset)
 		{
 			return this.Collection.Open(limit, offset).Map(this.Map);
 		}
 		#endregion
 		#region Post
-		protected override void Post(Http.Request request, Http.Response response)
+		protected override void Post (Http.Request request, Http.Response response)
 		{
-			ResourceHandler<R> result = this.Map(new R());
-			if (!request.Receive(result))
-				response.Status = Http.Status.BadRequest;
-			else if (!this.Post(result.Resource))
-				response.Status = Http.Status.InternalServerError;
+			if (!this.Writable)
+				response.Status = Http.Status.Forbidden;
 			else
 			{
-				response.Status = Http.Status.Created;
-				response.Send(result);
+				ResourceHandler<R> result = this.Map(new R());
+				if (!request.Receive(result))
+					response.Status = Http.Status.BadRequest;
+				else if (!this.Post(result.Resource))
+					response.Status = Http.Status.InternalServerError;
+				else
+				{
+					response.Status = Http.Status.Created;
+					response.Send(result);
+				}
 			}
 		}
-		protected virtual bool Post(R item)
+		protected virtual bool Post (R item)
 		{
 			return this.Collection.Create(item) > 0;
 		}

@@ -32,8 +32,11 @@ namespace Aser.Http
 	public class Request
 	{
 		Owin.Types.OwinRequest backend;
+
 		#region Method
+
 		Method? method;
+
 		public Method Method
 		{ 
 			get
@@ -63,9 +66,13 @@ namespace Aser.Http
 				return this.method ?? Http.Method.Other;
 			} 
 		}
+
 		#endregion
+
 		#region Locator
+
 		Uri.Locator locator;
+
 		public Uri.Locator Locator
 		{
 			get
@@ -75,15 +82,35 @@ namespace Aser.Http
 				return this.locator;
 			} 
 		}
+
 		#endregion
+
+		#region Authorization
+
+		Header.Authorization authorization;
+
+		public Header.Authorization Authorization
+		{
+			get
+			{ 
+				if (this.authorization.IsNull())
+					this.authorization = this.backend.GetHeader("Authorization");
+				return this.authorization; 
+			} 
+		}
+
+		#endregion
+
 		#region Storage
+
 		Serialize.Storage storage;
+
 		Serialize.Storage Storage
 		{
 			get
 			{ 
 				if (this.storage.IsNull())
-					switch ("application/json")
+					switch ("application/json") // TODO: switch depending on client preference
 					{
 						case "application/json":
 							this.storage = new Json.Serialize.Storage();
@@ -95,9 +122,13 @@ namespace Aser.Http
 				return this.storage;
 			}
 		}
+
 		#endregion
+
 		#region Device
+
 		IO.IByteInDevice device;
+
 		public IO.IByteInDevice Device
 		{
 			get
@@ -107,23 +138,32 @@ namespace Aser.Http
 				return this.device; 
 			}
 		}
+
 		#endregion;
+
 		#region Constructors
+
 		internal Request(Owin.Types.OwinRequest backend)
 		{
 			this.backend = backend;
 		}
+
 		#endregion
+
 		#region Receive
-		public T Receive<T>()
+
+		public T Receive<T> ()
 		{
 			return this.Storage.Load<T>(this.Device);
 		}
-		public bool Receive<T>(T result)
+
+		public bool Receive<T> (T result)
 		{
 			return this.Storage.LoadInto(result, this.Device);
 		}
+
 		#endregion
+
 	}
 }
 

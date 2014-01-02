@@ -52,9 +52,11 @@ namespace Aser.Rest
 			this.resource = resource;
 		}
 		#region Put
-		protected override void Put(Http.Request request, Http.Response response)
+		protected override void Put (Http.Request request, Http.Response response)
 		{
-			if (!request.Receive(this))
+			if (!this.Writable)
+				response.Status = Http.Status.Forbidden;
+			else if (!request.Receive(this))
 				response.Status = Http.Status.BadRequest;
 			else if (!this.Resource.Save())
 				response.Status = Http.Status.InternalServerError;
@@ -66,15 +68,16 @@ namespace Aser.Rest
 		}
 		#endregion
 		#region Delete
-		protected override void Delete(Http.Request request, Http.Response response)
+		protected override void Delete (Http.Request request, Http.Response response)
 		{
 			if ((response.Status = this.Delete()).Success)
 				response.Send(this);
 		}
-		protected virtual Http.Status Delete()
+		protected virtual Http.Status Delete ()
 		{
-			return this.Resource.IsNull() ? Http.Status.NotFound :
-				 this.Resource.Remove() ? Http.Status.OK : 
+			return !this.Exists ? Http.Status.NotFound :
+				!this.Writable ? Http.Status.Forbidden :
+				this.Resource.Remove() ? Http.Status.OK : 
 				Http.Status.InternalServerError;
 		}
 		#endregion

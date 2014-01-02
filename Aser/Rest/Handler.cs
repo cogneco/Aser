@@ -31,12 +31,12 @@ namespace Aser.Rest
 {
 	public abstract class Handler
 	{
-		Func<Uri.Locator> getUrl;
+		Func<Uri.Locator> loadUrl;
 		Uri.Locator url;
 		[Serialize.Parameter]
 		public Uri.Locator Url
 		{
-			get { return this.url ?? (this.getUrl.NotNull() ? (this.url = this.getUrl()) : null); } 
+			get { return this.url ?? (this.loadUrl.NotNull() ? (this.url = this.loadUrl()) : null); } 
 		}
 		public virtual Action<Http.Request, Http.Response> this [Path path]
 		{
@@ -50,21 +50,23 @@ namespace Aser.Rest
 		}
 		public abstract bool Exists { get; }
 		public virtual Handler this [string head] { get { return null; } }
-		protected Handler(Func<Uri.Locator> getUrl)
+		public virtual bool Readable { get { return true; } }
+		public virtual bool Writable { get { return false; } }
+		protected Handler(Func<Uri.Locator> loadUrl)
 		{
-			this.getUrl = getUrl;
+			this.loadUrl = loadUrl;
 		}
 		protected Handler(Uri.Locator url)
 		{
 			this.url = url;
 		}
 		#region Process
-		public void Process(Http.Request request, Http.Response response)
+		public void Process (Http.Request request, Http.Response response)
 		{
 			this[(Path)request.Locator.Path](request, response);
 			response.End();
 		}
-		protected virtual void Route(Http.Request request, Http.Response response)
+		protected virtual void Route (Http.Request request, Http.Response response)
 		{
 			response.ContentType = "application/json";
 			switch (request.Method)
@@ -92,37 +94,39 @@ namespace Aser.Rest
 		#endregion
 		#region Get, Put, Post, Delete of this resource
 		#region Get
-		protected virtual void Get(Http.Request request, Http.Response response)
+		protected virtual void Get (Http.Request request, Http.Response response)
 		{
-			if (this.Exists)
+			if (!this.Exists)
+				response.Status = Http.Status.NotFound;
+			else if (!this.Readable)
+				response.Status = Http.Status.Forbidden;
+			else
 			{
 				response.Status = Http.Status.OK;
 				response.Send(this);
 			}
-			else
-				response.Status = Http.Status.NotFound;
 		}
 		#endregion
 		#region Put
-		protected virtual void Put(Http.Request request, Http.Response response)
+		protected virtual void Put (Http.Request request, Http.Response response)
 		{
 			response.Status = Http.Status.MethodNotAllowed;
 		}
 		#endregion
 		#region Patch
-		protected virtual void Patch(Http.Request request, Http.Response response)
+		protected virtual void Patch (Http.Request request, Http.Response response)
 		{
 			response.Status = Http.Status.MethodNotAllowed;
 		}
 		#endregion
 		#region Post
-		protected virtual void Post(Http.Request request, Http.Response response)
+		protected virtual void Post (Http.Request request, Http.Response response)
 		{
 			response.Status = Http.Status.MethodNotAllowed;
 		}
 		#endregion
 		#region Delete
-		protected virtual void Delete(Http.Request request, Http.Response response)
+		protected virtual void Delete (Http.Request request, Http.Response response)
 		{
 			response.Status = Http.Status.MethodNotAllowed;
 		}
