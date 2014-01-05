@@ -18,14 +18,17 @@
 //
 //  You should have received a copy of the GNU Lesser General Public License
 //  along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
 using System;
 using Kean;
 using Kean.Extension;
 using IO = Kean.IO;
+using Kean.IO.Extension;
 using Serialize = Kean.Serialize;
 using Json = Kean.Json;
 using Xml = Kean.Xml;
 using Uri = Kean.Uri;
+using Collection = Kean.Collection;
 using Kean.Collection.Extension;
 
 namespace Aser.Http
@@ -95,12 +98,12 @@ namespace Aser.Http
 			this.Link = new Header.Links();
 		}
 		#region Send
-		public bool Send<T>(T value)
+		public bool Send<T> (T value)
 		{
 			return this.Storage.Store(value, this.Device);
 		}
 		#endregion
-		public bool End()
+		public bool End ()
 		{
 			bool result;
 			if (!(result = this.Status.Success))

@@ -73,7 +73,7 @@ namespace Aser.Http
 
 		Uri.Locator locator;
 
-		public Uri.Locator Locator
+		public Uri.Locator Url
 		{
 			get
 			{

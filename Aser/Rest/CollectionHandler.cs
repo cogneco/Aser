@@ -65,8 +65,8 @@ namespace Aser.Rest
 		#region Get
 		protected override void Get (Http.Request request, Http.Response response)
 		{
-			int pageSize = request.Locator.Query.Get("pageSize", this.DefaultPageSize);
-			int page = request.Locator.Query.Get("page", 0);
+			int pageSize = request.Url.Query.Get("pageSize", this.DefaultPageSize);
+			int page = request.Url.Query.Get("page", 0);
 			int last = (this.Collection.Count - 1) / pageSize;
 			if (page > 0)
 			{

@@ -70,6 +70,7 @@
     <Compile Include="Rest\Handler.cs" />
     <Compile Include="Http\Header\Authorization.cs" />
     <Compile Include="Http\Header\BasicAuthorization.cs" />
+    <Compile Include="Rest\FileHandler.cs" />
   </ItemGroup>
   <Import Project="$(MSBuildBinPath)\Microsoft.CSharp.targets" />
   <ProjectExtensions>

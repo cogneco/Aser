@@ -63,7 +63,7 @@ namespace Aser.Rest
 		#region Process
 		public void Process (Http.Request request, Http.Response response)
 		{
-			this[(Path)request.Locator.Path](request, response);
+			this[(Path)request.Url.Path](request, response);
 			response.End();
 		}
 		protected virtual void Route (Http.Request request, Http.Response response)
