@@ -18,11 +18,13 @@
 //
 //  You should have received a copy of the GNU Lesser General Public License
 //  along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
 using System;
 using Kean;
 using Kean.Extension;
 using IO = Kean.IO;
 using Uri = Kean.Uri;
+
 namespace Aser.Http.Header
 {
 	public class Link
@@ -37,7 +39,7 @@ namespace Aser.Http.Header
 		public Link()
 		{
 		}
-		public static implicit operator string(Link link)
+		public static implicit operator string (Link link)
 		{
 			IO.Text.Builder result = null;
 			if (link.NotNull())
@@ -48,9 +50,9 @@ namespace Aser.Http.Header
 			}
 			return result; 
 		}
-		public static explicit operator Link(string link)
+		public static explicit operator Link (string link)
 		{
-			string[] splitted = link.SplitAt(';');
+			var splitted = link.SplitAt(';').ToArray();
 			Link result = null;
 			if (splitted.Length > 0 && splitted[0].StartsWith("<") && splitted[0].EndsWith(">"))
 			{
